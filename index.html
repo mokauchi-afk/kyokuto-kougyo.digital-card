@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>野﨑 元宏 | 極東興業株式会社 - デジタル名刺</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500;700;800&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  
+  <style>
+    /* =====================================================================
+       ベースデザイン & レイアウト
+       ===================================================================== */
+    :root { --effect-color: #d4af37; }
+    body { background-color: #121212; color: #e5e7eb; font-family: 'Inter', sans-serif; overflow-x: hidden; }
+    
+    .layout-public { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; padding: 1.5rem; }
+
+    /* =====================================================================
+       3D名刺ステージ
+       ===================================================================== */
+    .preview-stage { position: relative; width: 100%; max-width: 480px; aspect-ratio: 91/55; margin: 0 auto; perspective: 2500px; }
+    .card-tilt { width: 100%; height: 100%; transform-style: preserve-3d; }
+    .card-flip { width: 100%; height: 100%; transform-style: preserve-3d; transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1); cursor: pointer; -webkit-tap-highlight-color: transparent;}
+    .card-flip.is-flipped { transform: rotateY(180deg); }
+    
+    .card-face { position: absolute; inset: 0; width: 100%; height: 100%; backface-visibility: hidden; -webkit-backface-visibility: hidden; border-radius: 8px; overflow: hidden; background: #fff; box-shadow: 0 15px 35px rgba(0,0,0,0.6); }
+    .card-front { transform: rotateY(0deg) translateZ(1px); z-index: 2; }
+    .card-back { transform: rotateY(180deg) translateZ(1px); z-index: 1; pointer-events: none; }
+    .card-bg-image { width: 100%; height: 100%; object-fit: fill; position: absolute; inset: 0; z-index: 1; pointer-events: none; }
+
+    /* =====================================================================
+       透明タップ領域（ホットスポット）
+       ===================================================================== */
+    .hotspot { position: absolute; z-index: 50; cursor: pointer; display: block; border-radius: 4px; -webkit-tap-highlight-color: rgba(255,255,255,0.2); background: transparent; border: none; }
+
+    /* =====================================================================
+       【本物のロゴ浮き出し】透明PNGを使った完璧な箔押しエフェクト
+       ===================================================================== */
+    .foil-logo {
+      position: absolute;
+      z-index: 20;
+      pointer-events: none;
+      
+      filter:
+        brightness(1.8)
+        contrast(1.5)
+        drop-shadow(0 0 8px gold)
+        drop-shadow(0 2px 2px rgba(0,0,0,.6));
+        
+      animation: logoShine 3s infinite;
+    }
+
+    @keyframes logoShine {
+      0% {
+        transform: translateY(0);
+        filter: brightness(1.4) drop-shadow(0 0 4px gold);
+      }
+      50% {
+        transform: translateY(-1px);
+        filter: brightness(2.5) drop-shadow(0 0 14px gold);
+      }
+      100% {
+        transform: translateY(0);
+        filter: brightness(1.4) drop-shadow(0 0 4px gold);
+      }
+    }
+
+    /* =====================================================================
+       【裏面】WEBサイト・QRコード表示用の枠組み
+       ===================================================================== */
+    .back-info {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 4%;
+      text-align: center;
+      z-index: 30;
+      color: #111;
+      font-weight: 700;
+      font-size: clamp(8px, 1.3vw, 13px);
+      background: rgba(255, 255, 255, 0.85);
+      padding: 6px 8px;
+      backdrop-filter: blur(2px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+
+    /* =====================================================================
+       全体エフェクト
+       ===================================================================== */
+    .card-shine { position: absolute; inset: 0; pointer-events: none; z-index: 5; opacity: 0; background: linear-gradient(115deg, transparent 20%, rgba(255,255,255,0.3) 40%, rgba(255,228,242,0.3) 50%, transparent 70%); background-size: 200% 200%; mix-blend-mode: overlay; transition: opacity 0.3s; }
+    .has-pearl .card-shine { opacity: 1; }
+    
+    @keyframes sweepShine { 0% { left: -100%; opacity: 0; } 20% { opacity: 1; } 40% { left: 100%; opacity: 0; } 100% { left: 100%; opacity: 0; } }
+    .card-sweep-light { position: absolute; top: -50%; height: 200%; width: 40px; z-index: 7; pointer-events: none; display: none; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4) 40%, var(--effect-color) 50%, rgba(255,255,255,0.4) 60%, transparent); transform: rotate(25deg); animation: sweepShine 4s cubic-bezier(0.2, 0.8, 0.2, 1) infinite; }
+    .has-sweep .card-sweep-light { display: block; }
+    
+    @keyframes borderSweepAnim { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    .card-border-wrap { position: absolute; inset: -50%; z-index: 2; pointer-events: none; display: none; align-items: center; justify-content: center; }
+    .card-border-gradient { width: 100%; height: 100%; background: conic-gradient(transparent 70%, var(--effect-color) 90%, #fff 95%, transparent 100%); animation: borderSweepAnim 4s linear infinite; }
+    .card-border-mask { position: absolute; inset: 2px; background: inherit; border-radius: inherit; z-index: 3; pointer-events: none; display: none; }
+    .has-border .card-border-wrap, .has-border .card-border-mask { display: flex; }
+    
+    .has-emboss .card-bg-image { filter: contrast(1.15) drop-shadow(1px 2px 2px rgba(0,0,0,0.6)); }
+
+    #toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #111; border: 1px solid #d4af37; color: #d4af37; padding: 12px 24px; border-radius: 30px; font-size: 13px; z-index: 9999; display: none; white-space: nowrap; box-shadow: 0 4px 12px rgba(0,0,0,0.5);}
+  </style>
+
+  <script id="gas-data" type="application/json">
+  {
+    "id": "nozaki_m",
+    "companyName": "極東興業株式会社",
+    "name": "野﨑 元宏",
+    "title": "営業部長",
+    "postalCode": "761-0312",
+    "address": "香川県高松市東山崎町347-7",
+    "tel_main": "087-847-6116",
+    "fax": "087-847-6195",
+    "tel_mobile": "080-1992-2079",
+    "email": "kyokuto@mwb.biglobe.ne.jp",
+    "website": "https://kyokutoukougyou.net/", 
+    "businessLines": "クレンカー作業 / 鉄骨建家 / 諸機械据付 / 重量物運搬",
+    "frontImg": "IMG_7545.jpg",
+    "backImg": "IMG_7546%E3%81%86%E3%82%89.jpeg", 
+    "emboss": true,
+    "pearl": false,
+    "sweepShine": true,
+    "borderSweep": false,
+    "effectColor": "#d4af37",
+    "coords": {
+      "a": { "x": 32, "y": 60, "w": 56, "h": 6 },
+      "t1": { "x": 55, "y": 67, "w": 35, "h": 6 },
+      "f": { "x": 55, "y": 73, "w": 35, "h": 6 },
+      "t2": { "x": 55, "y": 78, "w": 35, "h": 6 },
+      "e": { "x": 32, "y": 84, "w": 58, "h": 7 },
+      "w": { "x": 15, "y": 10, "w": 72, "h": 18 },
+      "logo": { "x": 5.5, "y": 9, "w": 11, "h": 18 } 
+    }
+  }
+  </script>
+</head>
+
+<body id="mainBody">
+
+  <div id="mainLayout" class="layout-public">
+    <div id="cardSection" class="w-full max-w-lg">
+      <div class="p-4 md:p-6 mb-6">
+        <div class="preview-stage" id="previewStage">
+          <div class="card-tilt" id="cardTilt">
+            <div class="card-flip" id="cardFlip">
+              
+              <div class="card-face card-front" id="cardFront">
+                <div class="card-border-wrap"><div class="card-border-gradient"></div></div>
+                <div class="card-border-mask"></div>
+                <img id="imgFront" src="IMG_7545.jpg" class="card-bg-image" alt="名刺 表面" onerror="if(this.getAttribute('data-retried') !== 'true') { this.setAttribute('data-retried', 'true'); this.src='front.jpg'; } else { this.src='https://placehold.jp/910x550.png?text=表面画像が読み込めません'; }">
+                <div class="card-shine"></div>
+                <div class="card-sweep-light"></div>
+                
+                <img id="logoFoil" src="logo.png" class="foil-logo" alt="ロゴ" onerror="this.style.display='none';">
+                
+                <a id="tapAddr" href="#" target="_blank" rel="noopener" class="hotspot" onclick="event.stopPropagation()"></a>
+                <a id="tapTelMain" href="#" class="hotspot" onclick="event.stopPropagation()"></a>
+                <a id="tapFax" href="#" class="hotspot" onclick="event.stopPropagation()"></a>
+                <a id="tapTelMobile" href="#" class="hotspot" onclick="event.stopPropagation()"></a>
+                <a id="tapEmail" href="#" class="hotspot" onclick="event.stopPropagation()"></a>
+                <a id="tapWeb" href="#" target="_blank" rel="noopener" class="hotspot" onclick="event.stopPropagation()"></a>
+              </div>
+
+              <div class="card-face card-back" id="cardBack">
+                <div class="card-border-wrap"><div class="card-border-gradient"></div></div>
+                <div class="card-border-mask"></div>
+                <img id="imgBack" src="IMG_7546%E3%81%86%E3%82%89.jpeg" class="card-bg-image" alt="名刺 裏面" onerror="if(!this.retried){this.retried=true; this.src='IMG_7546うら.jpeg';} else { this.src='https://placehold.jp/910x550.png?text=裏面画像エラー(画像名をback.jpgに変更してください)'; }">
+                <div class="card-shine"></div>
+                <div class="card-sweep-light"></div>
+                
+                <div class="back-info">
+                  <img id="qrCode" src="" alt="QR" style="width:50px; height:50px;">
+                  <div style="margin-top:2px; font-size:10px;">WEB SITE</div>
+                  <div id="websiteText" style="font-size:11px;"></div>
+                </div>
+
+                <a id="tapWebBack" href="#" target="_blank" rel="noopener" class="hotspot" onclick="event.stopPropagation()"></a>
+              </div>
+              
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="publicActions" class="w-full max-w-xs mx-auto flex flex-col gap-3 mt-4">
+        <button onclick="doFlip()" class="w-full py-3 bg-[#171412] text-gray-300 border border-gray-800 rounded-lg text-xs flex items-center justify-center gap-2 hover:border-[#d4af37] transition">
+          🔄 裏面を表示する（タップ回転）
+        </button>
+        <button onclick="downloadVCard()" class="w-full py-3.5 bg-gradient-to-r from-[#2a2218] to-[#120e0a] text-[#d4af37] border border-[#d4af37] rounded-lg font-bold text-xs flex items-center justify-center gap-2 shadow-xl hover:text-white transition">
+          📥 スマホの連絡先に保存する
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast"></div>
+
+  <script>
+    let globalCardData = {};
+
+    const cardTilt = document.getElementById('cardTilt');
+    let currentX = 0, currentY = 0, targetX = 0, targetY = 0;
+
+    function animLoop() {
+      currentX += (targetX - currentX) * 0.1;
+      currentY += (targetY - currentY) * 0.1;
+      cardTilt.style.transform = `rotateX(${-currentY * 12}deg) rotateY(${currentX * 12}deg)`;
+      requestAnimationFrame(animLoop);
+    }
+    requestAnimationFrame(animLoop);
+
+    document.getElementById('previewStage').addEventListener('mousemove', e => {
+      const rect = e.currentTarget.getBoundingClientRect();
+      const cx = rect.left + rect.width / 2;
+      const cy = rect.top + rect.height / 2;
+      targetX = (e.clientX - cx) / (rect.width / 2);
+      targetY = (e.clientY - cy) / (rect.height / 2);
+    });
+    document.getElementById('previewStage').addEventListener('mouseleave', () => { targetX = 0; targetY = 0; });
+
+    const cardFlip = document.getElementById('cardFlip');
+    let isFlipped = false, isFlippingNow = false;
+    
+    function doFlip() {
+      if (isFlippingNow) return; 
+      isFlippingNow = true;
+      isFlipped = !isFlipped;
+      cardFlip.classList.toggle('is-flipped', isFlipped);
+      
+      setTimeout(() => {
+        document.getElementById('cardFront').style.pointerEvents = isFlipped ? 'none' : 'auto';
+        document.getElementById('cardBack').style.pointerEvents = isFlipped ? 'auto' : 'none';
+        isFlippingNow = false;
+      }, 300);
+    }
+    cardFlip.addEventListener('click', (e) => { if (e.target && e.target.closest('a')) return; doFlip(); });
+
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg; t.style.display = 'block';
+      setTimeout(() => t.style.display = 'none', 3000);
+    }
+
+    function applyEffects(dbData) {
+      const rootF = document.getElementById('cardFront'), rootB = document.getElementById('cardBack');
+      document.documentElement.style.setProperty('--effect-color', dbData.effectColor || '#d4af37');
+
+      const applyTo = (el) => {
+        el.classList.toggle('has-emboss', dbData.emboss);
+        el.classList.toggle('has-pearl', dbData.pearl);
+        el.classList.toggle('has-sweep', dbData.sweepShine);
+        el.classList.toggle('has-border', dbData.borderSweep);
+      };
+      applyTo(rootF); applyTo(rootB);
+    }
+
+    function downloadVCard() {
+      const d = globalCardData;
+      const telMain = d.tel_main ? d.tel_main.replace(/[^\d+()]/g, '') : '';
+      const telMobile = d.tel_mobile ? d.tel_mobile.replace(/[^\d+()]/g, '') : '';
+      const fax = d.fax ? d.fax.replace(/[^\d+()]/g, '') : '';
+      const pageUrl = window.location.href.split('?')[0]; 
+      
+      const lines = [
+        'BEGIN:VCARD', 'VERSION:3.0',
+        `N:;${d.name || ''};;;`, 
+        `FN:${d.name || ''}`, 
+        `ORG:${d.companyName || ''}`, 
+        `TITLE:${d.title || ''}`,
+        `TEL;TYPE=WORK,VOICE:${telMain}`, 
+        `TEL;TYPE=CELL,VOICE:${telMobile}`,
+        `TEL;TYPE=WORK,FAX:${fax}`,
+        `EMAIL;TYPE=WORK:${d.email || ''}`,
+        `ADR;TYPE=WORK:;;${d.address || ''};;;;日本`,
+        `URL:${d.website || pageUrl}`,
+        `NOTE:事業内容: ${d.businessLines || ''}`,
+        'END:VCARD'
+      ];
+      
+      const vcfStr = lines.join('\r\n');
+      const bom = new Uint8Array([0xEF, 0xBB, 0xBF]);
+      const blob = new Blob([bom, vcfStr], { type: "text/vcard;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = `${d.companyName}_${d.name}.vcf`.replace(/\s/g, '');
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 3000);
+      showToast("✓ スマホの連絡先に保存しました");
+    }
+
+    function loadData() {
+      try {
+        const rawData = document.getElementById('gas-data').textContent.trim();
+        if (rawData) globalCardData = JSON.parse(rawData);
+      } catch(e) { console.warn("JSON Parse Error", e); }
+
+      const d = globalCardData;
+      if (Object.keys(d).length === 0) return;
+
+      if(d.frontImg) document.getElementById('imgFront').src = d.frontImg;
+      if(d.backImg) document.getElementById('imgBack').src = d.backImg;
+
+      if (d.address) document.getElementById('tapAddr').href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(d.address)}`;
+      if (d.tel_main) document.getElementById('tapTelMain').href = `tel:${d.tel_main.replace(/[^\d]/g, '')}`;
+      if (d.fax) document.getElementById('tapFax').href = `tel:${d.fax.replace(/[^\d]/g, '')}`; 
+      if (d.tel_mobile) document.getElementById('tapTelMobile').href = `tel:${d.tel_mobile.replace(/[^\d]/g, '')}`;
+      if (d.email) document.getElementById('tapEmail').href = `mailto:${d.email}`;
+      
+      // ★ 裏面情報とQRの連携 ★
+      const websiteText = document.getElementById('websiteText');
+      const qrCode = document.getElementById('qrCode');
+      const webBack = document.getElementById('tapWebBack');
+
+      if (d.website) {
+        document.getElementById('tapWeb').href = d.website;
+        
+        // テキスト表示
+        if(websiteText) websiteText.textContent = d.website;
+        
+        // QRコード生成
+        if(qrCode) {
+          qrCode.src = "https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=" + encodeURIComponent(d.website);
+        }
+
+        // 裏面Webタップ領域
+        if(webBack){
+          webBack.href = d.website;
+          webBack.style.left = '10%';
+          webBack.style.top = '82%';
+          webBack.style.width = '80%';
+          webBack.style.height = '14%'; // テキストとQRをカバーする広さに調整
+        }
+      }
+
+      if(d.coords) {
+        const map = { 'a':'tapAddr', 't1':'tapTelMain', 'f':'tapFax', 't2':'tapTelMobile', 'e':'tapEmail', 'w':'tapWeb' };
+        Object.keys(d.coords).forEach(key => {
+          const el = document.getElementById(map[key]);
+          if(el && d.coords[key]) {
+            el.style.left = d.coords[key].x + '%'; 
+            el.style.top = d.coords[key].y + '%';
+            el.style.width = d.coords[key].w + '%'; 
+            el.style.height = d.coords[key].h + '%';
+          }
+        });
+
+        // ★ 本物のロゴ画像（PNG）の配置連動 ★
+        if(d.coords.logo) {
+          const foil = document.getElementById('logoFoil');
+          if(foil) {
+            foil.style.left = d.coords.logo.x + '%';
+            foil.style.top = d.coords.logo.y + '%';
+            foil.style.width = d.coords.logo.w + '%';
+            foil.style.height = d.coords.logo.h + '%';
+          }
+        }
+      }
+
+      applyEffects(d);
+    }
+
+    window.onload = () => {
+      loadData();
+    };
+  </script>
+</body>
+</html>
