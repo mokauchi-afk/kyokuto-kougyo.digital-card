@@ -26,8 +26,8 @@
     
     .card-face { position: absolute; inset: 0; width: 100%; height: 100%; backface-visibility: hidden; -webkit-backface-visibility: hidden; border-radius: 8px; overflow: hidden; background: #fff; box-shadow: 0 15px 35px rgba(0,0,0,0.6); }
     .card-front { transform: rotateY(0deg) translateZ(1px); z-index: 2; }
-    .card-back { transform: rotateY(180deg) translateZ(1px); z-index: 1; pointer-events: none; }
-    .card-bg-image { width: 100%; height: 100%; object-fit: fill; position: absolute; inset: 0; z-index: 1; pointer-events: none; }
+    .card-back { transform: rotateY(180deg) translateZ(1px); z-index: 1; pointer-events: none; visibility: hidden; }
+    .card-bg-image { width: 100%; height: 100%; object-fit: cover; position: absolute; inset: 0; z-index: 1; pointer-events: none; }
 
     /* =====================================================================
        透明タップ領域（ホットスポット）
@@ -124,7 +124,7 @@
     "website": "https://kyokutoukougyou.net/", 
     "businessLines": "クレンカー作業 / 鉄骨建家 / 諸機械据付 / 重量物運搬",
     "frontImg": "IMG_7545.jpg",
-    "backImg": "IMG_7546%E3%81%86%E3%82%89.jpeg", 
+    "backImg": "IMG_7546うら.jpg", 
     "emboss": true,
     "pearl": false,
     "sweepShine": true,
@@ -155,7 +155,7 @@
               <div class="card-face card-front" id="cardFront">
                 <div class="card-border-wrap"><div class="card-border-gradient"></div></div>
                 <div class="card-border-mask"></div>
-                <img id="imgFront" src="IMG_7545.jpg" class="card-bg-image" alt="名刺 表面" onerror="if(this.getAttribute('data-retried') !== 'true') { this.setAttribute('data-retried', 'true'); this.src='front.jpg'; } else { this.src='https://placehold.jp/910x550.png?text=表面画像が読み込めません'; }">
+                <img id="imgFront" src="IMG_7545.jpg" class="card-bg-image" alt="名刺 表面" onerror="this.src='https://placehold.jp/910x550.png?text=表面画像が見つかりません';">
                 <div class="card-shine"></div>
                 <div class="card-sweep-light"></div>
                 
@@ -172,7 +172,7 @@
               <div class="card-face card-back" id="cardBack">
                 <div class="card-border-wrap"><div class="card-border-gradient"></div></div>
                 <div class="card-border-mask"></div>
-                <img id="imgBack" src="IMG_7546%E3%81%86%E3%82%89.jpeg" class="card-bg-image" alt="名刺 裏面" onerror="if(!this.retried){this.retried=true; this.src='IMG_7546うら.jpeg';} else { this.src='https://placehold.jp/910x550.png?text=裏面画像エラー(画像名をback.jpgに変更してください)'; }">
+                <img id="imgBack" src="IMG_7546うら.jpg" class="card-bg-image" alt="名刺 裏面" onerror="this.src='https://placehold.jp/910x550.png?text=裏面画像が見つかりません';">
                 <div class="card-shine"></div>
                 <div class="card-sweep-light"></div>
                 
@@ -235,11 +235,23 @@
       isFlipped = !isFlipped;
       cardFlip.classList.toggle('is-flipped', isFlipped);
       
+      // 中間地点(300ms)で面を切り替える
       setTimeout(() => {
-        document.getElementById('cardFront').style.pointerEvents = isFlipped ? 'none' : 'auto';
-        document.getElementById('cardBack').style.pointerEvents = isFlipped ? 'auto' : 'none';
-        isFlippingNow = false;
+        const f = document.getElementById('cardFront');
+        const b = document.getElementById('cardBack');
+        if (isFlipped) {
+          f.style.visibility = 'hidden'; f.style.pointerEvents = 'none';
+          b.style.visibility = 'visible'; b.style.pointerEvents = 'auto';
+        } else {
+          b.style.visibility = 'hidden'; b.style.pointerEvents = 'none';
+          f.style.visibility = 'visible'; f.style.pointerEvents = 'auto';
+        }
       }, 300);
+
+      // アニメーション完了地点(600ms)で連打ロック解除
+      setTimeout(() => {
+        isFlippingNow = false;
+      }, 600);
     }
     cardFlip.addEventListener('click', (e) => { if (e.target && e.target.closest('a')) return; doFlip(); });
 
@@ -314,29 +326,22 @@
       if (d.tel_mobile) document.getElementById('tapTelMobile').href = `tel:${d.tel_mobile.replace(/[^\d]/g, '')}`;
       if (d.email) document.getElementById('tapEmail').href = `mailto:${d.email}`;
       
-      // ★ 裏面情報とQRの連携 ★
       const websiteText = document.getElementById('websiteText');
       const qrCode = document.getElementById('qrCode');
       const webBack = document.getElementById('tapWebBack');
 
       if (d.website) {
         document.getElementById('tapWeb').href = d.website;
-        
-        // テキスト表示
         if(websiteText) websiteText.textContent = d.website;
-        
-        // QRコード生成
         if(qrCode) {
           qrCode.src = "https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=" + encodeURIComponent(d.website);
         }
-
-        // 裏面Webタップ領域
         if(webBack){
           webBack.href = d.website;
           webBack.style.left = '10%';
           webBack.style.top = '82%';
           webBack.style.width = '80%';
-          webBack.style.height = '14%'; // テキストとQRをカバーする広さに調整
+          webBack.style.height = '14%'; 
         }
       }
 
@@ -352,7 +357,6 @@
           }
         });
 
-        // ★ 本物のロゴ画像（PNG）の配置連動 ★
         if(d.coords.logo) {
           const foil = document.getElementById('logoFoil');
           if(foil) {
