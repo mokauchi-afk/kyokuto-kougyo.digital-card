@@ -99,28 +99,28 @@
     }
 
     /* =========================================================================
-       👑 最終確定版: 【裏面】QRコードの文字被りゼロ（極限まで小さく・左下・横並び）
+       👑 黄金比調整版: 【裏面】QRコード配置（左下・適度な余白・横並び）
        ========================================================================= */
     .back-info {
       position: absolute; 
-      left: 1%; /* 左端の限界 */
-      bottom: 2%; /* 下端の限界 */
+      left: 4%; /* 端すぎない自然な余白 */
+      bottom: 4%; 
       z-index: 30;
       color: #111; 
-      background: rgba(255, 255, 255, 0.7); /* 透け感を強める */
-      padding: 3px 5px; /* 余白を極限まで削る */
-      border-radius: 4px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-      backdrop-filter: blur(2px);
+      background: rgba(255, 255, 255, 0.85); /* 高級感のあるすりガラス調 */
+      padding: 5px 8px; /* 窮屈すぎない余白 */
+      border-radius: 6px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      backdrop-filter: blur(4px);
       display: flex; 
       flex-direction: row; /* 横並び */
       align-items: center; 
-      gap: 4px; /* QRと文字の隙間を狭く */
+      gap: 6px; /* QRと文字の適度な隙間 */
       pointer-events: none;
     }
     .back-info img {
-      width: 22px; /* QRコードを極小化（これ以上小さいと読めない限界サイズ） */
-      height: 22px;
+      width: 30px; /* 読み取りやすく、かつ大きすぎない絶妙なサイズ */
+      height: 30px;
       display: block;
       mix-blend-mode: multiply;
     }
@@ -131,21 +131,20 @@
       justify-content: center;
     }
     .back-info-label {
-      font-size: 5px; /* 極小フォント */
+      font-size: 6px; 
       font-weight: 800;
       letter-spacing: 0.05em;
-      color: #555;
+      color: #666;
       font-family: 'Inter', sans-serif;
       line-height: 1;
-      margin-bottom: 1px;
+      margin-bottom: 2px;
     }
     .back-info-url {
-      font-size: 6.5px; /* URLのフォントサイズも限界まで縮小 */
+      font-size: 8px; /* 肉眼で読めるギリギリのスマートなサイズ */
       font-weight: 700;
       font-family: 'Inter', sans-serif;
       white-space: nowrap; /* 1行を強制 */
       line-height: 1;
-      letter-spacing: -0.02em; /* 文字間を少し詰める */
     }
 
     /* =========================================================================
@@ -263,7 +262,7 @@
             
             <img id="viewBackImg" src="IMG_7546うら.jpg" class="card-face-image" alt="名刺裏面画像" onerror="this.src='https://placehold.jp/910x550.png?text=裏面画像が見つかりません';">
             
-            <!-- 🌟QRコードとURLを左下限界にコンパクト配置（横並び） -->
+            <!-- 🌟QRコードとURLを左下に配置（横並び） -->
             <div class="back-info" id="qrContainer">
               <img id="qrCode" src="" alt="QR">
               <div class="back-info-text">
@@ -640,11 +639,11 @@
         document.getElementById('websiteText').textContent = displayUrl;
         
         const webBack = document.getElementById('linkWeb');
-        // 左下ギリギリのQR領域全体に被せる (X: 18, Y: 470付近)
-        webBack.style.setProperty('--el-x', 18);  
-        webBack.style.setProperty('--el-y', 470); 
-        webBack.style.setProperty('--el-w', 160); 
-        webBack.style.setProperty('--el-h', 50);  
+        // 左下ギリギリのQR領域全体に被せる (X: 30, Y: 480付近)
+        webBack.style.setProperty('--el-x', 30);  
+        webBack.style.setProperty('--el-y', 480); 
+        webBack.style.setProperty('--el-w', 120); 
+        webBack.style.setProperty('--el-h', 45);  
         webBack.href = webUrl;
         
         document.getElementById('qrContainer').style.display = 'flex';
