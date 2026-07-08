@@ -104,7 +104,7 @@
     .back-info {
       position: absolute; 
       left: 6%;  /* 🌟左寄せ */
-      bottom: 8%; /* 🌟下寄せ */
+      bottom: 8%; /* 🌟下寄せ (文字被りを防ぐためさらに下に調整) */
       z-index: 30;
       color: #111; 
       background: rgba(255, 255, 255, 0.8); /* ほんのり透けるすりガラス調 */
@@ -122,9 +122,9 @@
       pointer-events: none; /* タップ検知は下の hotspot に任せる */
     }
     
-    /* QRコードのサイズを固定 */
+    /* 🌟QRコードのサイズを一回り小さく固定 */
     .back-info img {
-      width: 35px; /* 小さめで上品に */
+      width: 35px; /* 🌟小さく調整 */
       height: 35px;
       display: block;
       mix-blend-mode: multiply; /* 白背景に自然に馴染ませる */
@@ -140,7 +140,7 @@
     
     /* "WEB SITE" のタイトル */
     .back-info-title {
-      font-size: 7px;
+      font-size: 7px; /* 🌟小さく調整 */
       font-weight: 900;
       letter-spacing: 0.1em;
       color: #555; /* 少し落ち着いた色 */
@@ -149,7 +149,7 @@
     
     /* URL本体 */
     .back-info-url {
-      font-size: 9px;
+      font-size: 9px; /* 🌟小さく調整 */
       font-weight: 600;
       letter-spacing: 0.05em;
       color: #111;
@@ -489,13 +489,13 @@
     });
     document.addEventListener('mouseleave', function() { targetX = 0; targetY = 0; });
 
-    // --- 3Dフリップ時のチラつき・非表示バグの防御 ---
+    // --- 3Dフリップ時のチラつき・非表示防御 ---
     let isFlipped = false;
     let isFlippingNow = false;
     
     function flipCard(e) {
-      // リンク(aタグ)がタップされた場合は裏返さない
-      if (e && e.target && e.target.closest('a')) return; 
+      // リンクがタップされた場合は反転させない
+      if (e && e.target && e.target.tagName.toLowerCase() === 'a') return; 
       
       if (isFlippingNow) return;
       isFlippingNow = true;
@@ -634,26 +634,25 @@
       const cleanAddress = document.getElementById('inputVCardAddr').value.replace(/〒?\d{3}-\d{4}\s*/, '');
       linkAddr.href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(cleanAddress)}`;
       
-      // 🌟修正済: 各種リンクの反映
+      // 各種リンクの反映
       document.getElementById('linkTel').href = `tel:${document.getElementById('inputVCardTel').value.replace(/[^\d-]/g, '')}`;
       document.getElementById('linkFax').href = `tel:${document.getElementById('inputVCardFax').value.replace(/[^\d-]/g, '')}`;
       document.getElementById('linkMobile').href = `tel:${document.getElementById('inputVCardMobile').value.replace(/[^\d-]/g, '')}`;
       document.getElementById('linkEmail').href = `mailto:${document.getElementById('inputVCardEmail').value.trim()}`;
 
-      // 🌟究極の再設計: QRコードの反映とホットスポット位置
+      // QRコードの反映とホットスポット位置
       const webUrl = document.getElementById('inputVCardWeb').value;
       if(webUrl) {
-        // QRコードの生成
+        // 余計なURL表示は消し、短いURLだけ残す
         document.getElementById('qrCode').src = "https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=" + encodeURIComponent(webUrl);
-        // URLテキストのセット
-        document.getElementById('websiteText').textContent = webUrl;
+        document.getElementById('websiteText').textContent = webUrl.replace(/^https?:\/\//, ''); // URLから http:// を除去して表示
         
         const webBack = document.getElementById('linkWeb');
-        // 左下に配置した横長の枠にぴったり被せる (X: 45付近, Y: 430付近)
+        // 左下に配置したQR領域に被せる (X: 45付近, Y: 430付近)
         webBack.style.setProperty('--el-x', 45);  
         webBack.style.setProperty('--el-y', 430); 
-        webBack.style.setProperty('--el-w', 220); // 横長に変更
-        webBack.style.setProperty('--el-h', 60);  // 高さを調整
+        webBack.style.setProperty('--el-w', 220); // 横長の領域に合わせて拡大
+        webBack.style.setProperty('--el-h', 60);  
         webBack.href = webUrl;
       }
 
