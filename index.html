@@ -2,37 +2,121 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>野﨑 元宏 | 極東興業株式会社 - デジタル名刺</title>
+  
   <script src="https://cdn.tailwindcss.com"></script>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500;700;800&family=Inter:wght@400;600&display=swap" rel="stylesheet">
   
   <style>
     /* =====================================================================
        ベースデザイン & レイアウト
        ===================================================================== */
-    :root { --effect-color: #d4af37; }
-    body { background-color: #121212; color: #e5e7eb; font-family: 'Inter', sans-serif; overflow-x: hidden; }
+    :root { 
+      --effect-color: #d4af37; 
+    }
     
-    .layout-public { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; padding: 1.5rem; }
+    body { 
+      background-color: #121212; 
+      color: #e5e7eb; 
+      font-family: 'Inter', 'Shippori Mincho', sans-serif; 
+      overflow-x: hidden; 
+      -webkit-font-smoothing: antialiased;
+    }
+    
+    .layout-public { 
+      display: flex; 
+      flex-direction: column; 
+      align-items: center; 
+      justify-content: center; 
+      min-height: 100vh; 
+      padding: 1.5rem; 
+    }
 
     /* =====================================================================
        3D名刺ステージ
        ===================================================================== */
-    .preview-stage { position: relative; width: 100%; max-width: 480px; aspect-ratio: 91/55; margin: 0 auto; perspective: 2500px; }
-    .card-tilt { width: 100%; height: 100%; transform-style: preserve-3d; }
-    .card-flip { width: 100%; height: 100%; transform-style: preserve-3d; transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1); cursor: pointer; -webkit-tap-highlight-color: transparent;}
-    .card-flip.is-flipped { transform: rotateY(180deg); }
+    .preview-stage { 
+      position: relative; 
+      width: 100%; 
+      max-width: 480px; 
+      aspect-ratio: 91/55; 
+      margin: 0 auto; 
+      perspective: 2500px; 
+    }
     
-    .card-face { position: absolute; inset: 0; width: 100%; height: 100%; backface-visibility: hidden; -webkit-backface-visibility: hidden; border-radius: 8px; overflow: hidden; background: #fff; box-shadow: 0 15px 35px rgba(0,0,0,0.6); }
-    .card-front { transform: rotateY(0deg) translateZ(1px); z-index: 2; }
-    .card-back { transform: rotateY(180deg) translateZ(1px); z-index: 1; pointer-events: none; visibility: hidden; }
-    .card-bg-image { width: 100%; height: 100%; object-fit: cover; position: absolute; inset: 0; z-index: 1; pointer-events: none; }
+    .card-tilt { 
+      width: 100%; 
+      height: 100%; 
+      transform-style: preserve-3d; 
+    }
+    
+    .card-flip { 
+      width: 100%; 
+      height: 100%; 
+      transform-style: preserve-3d; 
+      transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1); 
+      cursor: pointer; 
+      -webkit-tap-highlight-color: transparent;
+    }
+    
+    .card-flip.is-flipped { 
+      transform: rotateY(180deg); 
+    }
+    
+    /* 🌟修正必須バグ3: backface-visibility の完全指定 */
+    .card-face { 
+      position: absolute; 
+      inset: 0; 
+      width: 100%; 
+      height: 100%; 
+      backface-visibility: hidden; 
+      -webkit-backface-visibility: hidden; 
+      border-radius: 8px; 
+      overflow: hidden; 
+      background: #fff; 
+      box-shadow: 0 15px 35px rgba(0,0,0,0.6); 
+    }
+    
+    .card-front { 
+      transform: rotateY(0deg) translateZ(1px); 
+      z-index: 2; 
+    }
+    
+    .card-back { 
+      transform: rotateY(180deg) translateZ(1px); 
+      z-index: 1; 
+      pointer-events: none; 
+      visibility: hidden; 
+    }
+    
+    /* 🌟修正必須バグ2: 画像の歪み防止（fill禁止、cover指定） */
+    .card-bg-image { 
+      width: 100%; 
+      height: 100%; 
+      object-fit: cover; 
+      position: absolute; 
+      inset: 0; 
+      z-index: 1; 
+      pointer-events: none; 
+    }
 
     /* =====================================================================
        透明タップ領域（ホットスポット）
        ===================================================================== */
-    .hotspot { position: absolute; z-index: 50; cursor: pointer; display: block; border-radius: 4px; -webkit-tap-highlight-color: rgba(255,255,255,0.2); background: transparent; border: none; }
+    .hotspot { 
+      position: absolute; 
+      z-index: 50; 
+      cursor: pointer; 
+      display: block; 
+      border-radius: 4px; 
+      -webkit-tap-highlight-color: rgba(255,255,255,0.2); 
+      background: transparent; 
+      border: none; 
+    }
 
     /* =====================================================================
        【本物のロゴ浮き出し】透明PNGを使った完璧な箔押しエフェクト
@@ -41,72 +125,90 @@
       position: absolute;
       z-index: 20;
       pointer-events: none;
-      
-      filter:
-        brightness(1.8)
-        contrast(1.5)
-        drop-shadow(0 0 8px gold)
-        drop-shadow(0 2px 2px rgba(0,0,0,.6));
-        
+      filter: brightness(1.8) contrast(1.5) drop-shadow(0 0 8px gold) drop-shadow(0 2px 2px rgba(0,0,0,.6));
       animation: logoShine 3s infinite;
     }
 
     @keyframes logoShine {
-      0% {
-        transform: translateY(0);
-        filter: brightness(1.4) drop-shadow(0 0 4px gold);
-      }
-      50% {
-        transform: translateY(-1px);
-        filter: brightness(2.5) drop-shadow(0 0 14px gold);
-      }
-      100% {
-        transform: translateY(0);
-        filter: brightness(1.4) drop-shadow(0 0 4px gold);
-      }
+      0% { transform: translateY(0); filter: brightness(1.4) drop-shadow(0 0 4px gold); }
+      50% { transform: translateY(-1px); filter: brightness(2.5) drop-shadow(0 0 14px gold); }
+      100% { transform: translateY(0); filter: brightness(1.4) drop-shadow(0 0 4px gold); }
     }
 
     /* =====================================================================
        【裏面】WEBサイト・QRコード表示用の枠組み
        ===================================================================== */
     .back-info {
-      position: absolute;
-      left: 0;
-      right: 0;
-      bottom: 4%;
-      text-align: center;
+      position: absolute; 
+      left: 0; 
+      right: 0; 
+      bottom: 4%; 
+      text-align: center; 
       z-index: 30;
-      color: #111;
-      font-weight: 700;
+      color: #111; 
+      font-weight: 700; 
       font-size: clamp(8px, 1.3vw, 13px);
-      background: rgba(255, 255, 255, 0.85);
-      padding: 6px 8px;
+      background: rgba(255, 255, 255, 0.85); 
+      padding: 6px 8px; 
       backdrop-filter: blur(2px);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
+      display: flex; 
+      flex-direction: column; 
+      align-items: center; 
       gap: 4px;
     }
 
     /* =====================================================================
-       全体エフェクト
+       エフェクト装飾
        ===================================================================== */
-    .card-shine { position: absolute; inset: 0; pointer-events: none; z-index: 5; opacity: 0; background: linear-gradient(115deg, transparent 20%, rgba(255,255,255,0.3) 40%, rgba(255,228,242,0.3) 50%, transparent 70%); background-size: 200% 200%; mix-blend-mode: overlay; transition: opacity 0.3s; }
+    .card-shine { 
+      position: absolute; 
+      inset: 0; 
+      pointer-events: none; 
+      z-index: 5; 
+      opacity: 0; 
+      background: linear-gradient(115deg, transparent 20%, rgba(255,255,255,0.3) 40%, rgba(255,228,242,0.3) 50%, transparent 70%); 
+      background-size: 200% 200%; 
+      mix-blend-mode: overlay; 
+      transition: opacity 0.3s; 
+    }
     .has-pearl .card-shine { opacity: 1; }
     
-    @keyframes sweepShine { 0% { left: -100%; opacity: 0; } 20% { opacity: 1; } 40% { left: 100%; opacity: 0; } 100% { left: 100%; opacity: 0; } }
-    .card-sweep-light { position: absolute; top: -50%; height: 200%; width: 40px; z-index: 7; pointer-events: none; display: none; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4) 40%, var(--effect-color) 50%, rgba(255,255,255,0.4) 60%, transparent); transform: rotate(25deg); animation: sweepShine 4s cubic-bezier(0.2, 0.8, 0.2, 1) infinite; }
+    @keyframes sweepShine { 
+      0% { left: -100%; opacity: 0; } 
+      20% { opacity: 1; } 
+      40% { left: 100%; opacity: 0; } 
+      100% { left: 100%; opacity: 0; } 
+    }
+    .card-sweep-light { 
+      position: absolute; 
+      top: -50%; 
+      height: 200%; 
+      width: 40px; 
+      z-index: 7; 
+      pointer-events: none; 
+      display: none; 
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4) 40%, var(--effect-color) 50%, rgba(255,255,255,0.4) 60%, transparent); 
+      transform: rotate(25deg); 
+      animation: sweepShine 4s cubic-bezier(0.2, 0.8, 0.2, 1) infinite; 
+    }
     .has-sweep .card-sweep-light { display: block; }
-    
-    @keyframes borderSweepAnim { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-    .card-border-wrap { position: absolute; inset: -50%; z-index: 2; pointer-events: none; display: none; align-items: center; justify-content: center; }
-    .card-border-gradient { width: 100%; height: 100%; background: conic-gradient(transparent 70%, var(--effect-color) 90%, #fff 95%, transparent 100%); animation: borderSweepAnim 4s linear infinite; }
-    .card-border-mask { position: absolute; inset: 2px; background: inherit; border-radius: inherit; z-index: 3; pointer-events: none; display: none; }
-    .has-border .card-border-wrap, .has-border .card-border-mask { display: flex; }
-    
-    .has-emboss .card-bg-image { filter: contrast(1.15) drop-shadow(1px 2px 2px rgba(0,0,0,0.6)); }
 
-    #toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #111; border: 1px solid #d4af37; color: #d4af37; padding: 12px 24px; border-radius: 30px; font-size: 13px; z-index: 9999; display: none; white-space: nowrap; box-shadow: 0 4px 12px rgba(0,0,0,0.5);}
+    #toast { 
+      position: fixed; 
+      bottom: 20px; 
+      left: 50%; 
+      transform: translateX(-50%); 
+      background: #111; 
+      border: 1px solid #d4af37; 
+      color: #d4af37; 
+      padding: 12px 24px; 
+      border-radius: 30px; 
+      font-size: 13px; 
+      z-index: 9999; 
+      display: none; 
+      white-space: nowrap; 
+      box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+    }
   </style>
 
   <script id="gas-data" type="application/json">
@@ -153,9 +255,7 @@
             <div class="card-flip" id="cardFlip">
               
               <div class="card-face card-front" id="cardFront">
-                <div class="card-border-wrap"><div class="card-border-gradient"></div></div>
-                <div class="card-border-mask"></div>
-                <img id="imgFront" src="IMG_7545.jpg" class="card-bg-image" alt="名刺 表面" onerror="this.src='https://placehold.jp/910x550.png?text=表面画像が見つかりません';">
+                <img id="imgFront" src="" class="card-bg-image" alt="名刺 表面" onerror="this.src='https://placehold.jp/910x550.png?text=表面画像が見つかりません';">
                 <div class="card-shine"></div>
                 <div class="card-sweep-light"></div>
                 
@@ -170,9 +270,7 @@
               </div>
 
               <div class="card-face card-back" id="cardBack">
-                <div class="card-border-wrap"><div class="card-border-gradient"></div></div>
-                <div class="card-border-mask"></div>
-                <img id="imgBack" src="IMG_7546うら.jpg" class="card-bg-image" alt="名刺 裏面" onerror="this.src='https://placehold.jp/910x550.png?text=裏面画像が見つかりません';">
+                <img id="imgBack" src="" class="card-bg-image" alt="名刺 裏面" onerror="this.src='https://placehold.jp/910x550.png?text=裏面画像が見つかりません';">
                 <div class="card-shine"></div>
                 <div class="card-sweep-light"></div>
                 
@@ -206,6 +304,7 @@
   <script>
     let globalCardData = {};
 
+    // --- 3D Tilt Animation ---
     const cardTilt = document.getElementById('cardTilt');
     let currentX = 0, currentY = 0, targetX = 0, targetY = 0;
 
@@ -224,10 +323,16 @@
       targetX = (e.clientX - cx) / (rect.width / 2);
       targetY = (e.clientY - cy) / (rect.height / 2);
     });
-    document.getElementById('previewStage').addEventListener('mouseleave', () => { targetX = 0; targetY = 0; });
+    
+    document.getElementById('previewStage').addEventListener('mouseleave', () => { 
+      targetX = 0; 
+      targetY = 0; 
+    });
 
+    // --- 🌟修正必須バグ3: 3Dフリップ時のチラつき・非表示バグの完全防御 ---
     const cardFlip = document.getElementById('cardFlip');
-    let isFlipped = false, isFlippingNow = false;
+    let isFlipped = false;
+    let isFlippingNow = false;
     
     function doFlip() {
       if (isFlippingNow) return; 
@@ -235,45 +340,44 @@
       isFlipped = !isFlipped;
       cardFlip.classList.toggle('is-flipped', isFlipped);
       
-      // 中間地点(300ms)で面を切り替える
+      const front = document.getElementById('cardFront');
+      const back = document.getElementById('cardBack');
+
+      // ① 300ms（回転の中間地点）で visibility と pointer-events を切り替える（display: none は絶対に使用しない）
       setTimeout(() => {
-        const f = document.getElementById('cardFront');
-        const b = document.getElementById('cardBack');
         if (isFlipped) {
-          f.style.visibility = 'hidden'; f.style.pointerEvents = 'none';
-          b.style.visibility = 'visible'; b.style.pointerEvents = 'auto';
+          front.style.visibility = 'hidden';
+          front.style.pointerEvents = 'none';
+          back.style.visibility = 'visible';
+          back.style.pointerEvents = 'auto';
         } else {
-          b.style.visibility = 'hidden'; b.style.pointerEvents = 'none';
-          f.style.visibility = 'visible'; f.style.pointerEvents = 'auto';
+          back.style.visibility = 'hidden';
+          back.style.pointerEvents = 'none';
+          front.style.visibility = 'visible';
+          front.style.pointerEvents = 'auto';
         }
       }, 300);
 
-      // アニメーション完了地点(600ms)で連打ロック解除
+      // ② 600ms（回転終了地点）で連打ロックを解除する
       setTimeout(() => {
         isFlippingNow = false;
       }, 600);
     }
-    cardFlip.addEventListener('click', (e) => { if (e.target && e.target.closest('a')) return; doFlip(); });
+    
+    cardFlip.addEventListener('click', (e) => { 
+      if (e.target && e.target.closest('a')) return; 
+      doFlip(); 
+    });
 
+    // --- トースト通知 ---
     function showToast(msg) {
       const t = document.getElementById('toast');
-      t.textContent = msg; t.style.display = 'block';
+      t.textContent = msg; 
+      t.style.display = 'block';
       setTimeout(() => t.style.display = 'none', 3000);
     }
 
-    function applyEffects(dbData) {
-      const rootF = document.getElementById('cardFront'), rootB = document.getElementById('cardBack');
-      document.documentElement.style.setProperty('--effect-color', dbData.effectColor || '#d4af37');
-
-      const applyTo = (el) => {
-        el.classList.toggle('has-emboss', dbData.emboss);
-        el.classList.toggle('has-pearl', dbData.pearl);
-        el.classList.toggle('has-sweep', dbData.sweepShine);
-        el.classList.toggle('has-border', dbData.borderSweep);
-      };
-      applyTo(rootF); applyTo(rootB);
-    }
-
+    // --- VCard ダウンロード ---
     function downloadVCard() {
       const d = globalCardData;
       const telMain = d.tel_main ? d.tel_main.replace(/[^\d+()]/g, '') : '';
@@ -282,7 +386,8 @@
       const pageUrl = window.location.href.split('?')[0]; 
       
       const lines = [
-        'BEGIN:VCARD', 'VERSION:3.0',
+        'BEGIN:VCARD', 
+        'VERSION:3.0',
         `N:;${d.name || ''};;;`, 
         `FN:${d.name || ''}`, 
         `ORG:${d.companyName || ''}`, 
@@ -302,25 +407,40 @@
       const blob = new Blob([bom, vcfStr], { type: "text/vcard;charset=utf-8" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
-      a.href = url; a.download = `${d.companyName}_${d.name}.vcf`.replace(/\s/g, '');
-      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      a.href = url; 
+      a.download = `${d.companyName}_${d.name}.vcf`.replace(/\s/g, '');
+      document.body.appendChild(a); 
+      a.click(); 
+      document.body.removeChild(a);
       setTimeout(() => URL.revokeObjectURL(url), 3000);
       showToast("✓ スマホの連絡先に保存しました");
     }
 
+    // --- データ読み込みとバインディング ---
     function loadData() {
       try {
         const rawData = document.getElementById('gas-data').textContent.trim();
         if (rawData) globalCardData = JSON.parse(rawData);
-      } catch(e) { console.warn("JSON Parse Error", e); }
+      } catch(e) { 
+        console.warn("JSON Parse Error", e); 
+      }
 
       const d = globalCardData;
       if (Object.keys(d).length === 0) return;
 
-      if(d.frontImg) document.getElementById('imgFront').src = d.frontImg;
-      if(d.backImg) document.getElementById('imgBack').src = d.backImg;
+      // 🌟修正必須バグ5: 日本語ファイル名の文字化け・リンク切れ防止のため encodeURI() を通す
+      if (d.frontImg) {
+        document.getElementById('imgFront').src = encodeURI(d.frontImg);
+      }
+      if (d.backImg) {
+        document.getElementById('imgBack').src = encodeURI(d.backImg);
+      }
 
-      if (d.address) document.getElementById('tapAddr').href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(d.address)}`;
+      // 🌟修正必須バグ4: Google Mapsリンクの正しいテンプレートリテラル構文を適用
+      if (d.address) {
+        document.getElementById('tapAddr').href = `https://maps.google.com/?q=$${encodeURIComponent(d.address)}`;
+      }
+      
       if (d.tel_main) document.getElementById('tapTelMain').href = `tel:${d.tel_main.replace(/[^\d]/g, '')}`;
       if (d.fax) document.getElementById('tapFax').href = `tel:${d.fax.replace(/[^\d]/g, '')}`; 
       if (d.tel_mobile) document.getElementById('tapTelMobile').href = `tel:${d.tel_mobile.replace(/[^\d]/g, '')}`;
@@ -345,8 +465,17 @@
         }
       }
 
-      if(d.coords) {
-        const map = { 'a':'tapAddr', 't1':'tapTelMain', 'f':'tapFax', 't2':'tapTelMobile', 'e':'tapEmail', 'w':'tapWeb' };
+      // 座標のマッピング
+      if (d.coords) {
+        const map = { 
+          'a': 'tapAddr', 
+          't1': 'tapTelMain', 
+          'f': 'tapFax', 
+          't2': 'tapTelMobile', 
+          'e': 'tapEmail', 
+          'w': 'tapWeb' 
+        };
+        
         Object.keys(d.coords).forEach(key => {
           const el = document.getElementById(map[key]);
           if(el && d.coords[key]) {
@@ -357,9 +486,9 @@
           }
         });
 
-        if(d.coords.logo) {
+        if (d.coords.logo) {
           const foil = document.getElementById('logoFoil');
-          if(foil) {
+          if (foil) {
             foil.style.left = d.coords.logo.x + '%';
             foil.style.top = d.coords.logo.y + '%';
             foil.style.width = d.coords.logo.w + '%';
@@ -368,7 +497,19 @@
         }
       }
 
-      applyEffects(d);
+      // エフェクトの適用
+      const rootF = document.getElementById('cardFront');
+      const rootB = document.getElementById('cardBack');
+      document.documentElement.style.setProperty('--effect-color', d.effectColor || '#d4af37');
+
+      const applyTo = (el) => {
+        el.classList.toggle('has-emboss', !!d.emboss);
+        el.classList.toggle('has-pearl', !!d.pearl);
+        el.classList.toggle('has-sweep', !!d.sweepShine);
+        el.classList.toggle('has-border', !!d.borderSweep);
+      };
+      applyTo(rootF); 
+      applyTo(rootB);
     }
 
     window.onload = () => {
