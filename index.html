@@ -54,7 +54,7 @@
     }
     .card-container.is-flipped { transform: rotateY(180deg); }
 
-    /* 3D面の基本設定 (スマホで消えるバグの防御) */
+    /* 3D面の基本設定 (スマホで消えるバグの完全防御) */
     .card-face {
       position: absolute; inset: 0; width: 100%; height: 100%;
       backface-visibility: hidden; -webkit-backface-visibility: hidden;
@@ -65,7 +65,7 @@
     }
 
     .card-front { transform: rotateY(0deg) translateZ(1px); z-index: 2; }
-    .card-back { transform: rotateY(180deg) translateZ(1px); z-index: 1; pointer-events: none; visibility: hidden; }
+    .card-back { transform: rotateY(180deg) translateZ(1px); z-index: 1; pointer-events: none; }
 
     /* 画像の歪み防止（cover指定） */
     .card-face-image {
@@ -79,10 +79,10 @@
       position: absolute;
       left: calc(var(--el-x, 0) / 910 * 100%); top: calc(var(--el-y, 0) / 550 * 100%);
       width: calc(var(--el-w, 100) / 910 * 100%); height: calc(var(--el-h, 50) / 550 * 100%);
-      z-index: 50; 
+      z-index: 50; /* エフェクトよりも前面に出して確実にタップ可能にする */
       border: 1px dashed rgba(206, 186, 140, 0.0); transition: border-color 0.2s ease, background-color 0.2s ease; 
       cursor: pointer; -webkit-tap-highlight-color: rgba(255,255,255,0.2);
-      pointer-events: auto;
+      pointer-events: auto; /* クリックを確実に検知 */
     }
     .edit-mode-active .coord-target { border: 1px dashed rgba(206, 186, 140, 0.75) !important; background-color: rgba(206, 186, 140, 0.15) !important; }
 
@@ -99,60 +99,39 @@
     }
 
     /* =========================================================================
-       🌟 究極の再設計: 【裏面】QRコードとURLを「左下」に横並びで美しく配置
+       🌟 究極の修正: 【裏面】QRコードの文字被り防止（左下ギリギリに極小配置）
        ========================================================================= */
     .back-info {
       position: absolute; 
-      left: 6%;  /* 🌟左寄せ */
-      bottom: 8%; /* 🌟下寄せ (文字被りを防ぐためさらに下に調整) */
+      left: 4%; /* 左端ギリギリへ移動 */
+      bottom: 4%; /* 下端ギリギリへ移動 */
+      width: 48px; /* さらに一回り縮小して被りを回避 */
+      text-align: center; 
       z-index: 30;
       color: #111; 
-      background: rgba(255, 255, 255, 0.8); /* ほんのり透けるすりガラス調 */
-      padding: 6px 10px 6px 6px; /* 横長にするための余白調整 */
-      border-radius: 8px;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+      background: rgba(255, 255, 255, 0.85); /* すりガラス調 */
+      padding: 4px; 
+      border-radius: 4px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
       backdrop-filter: blur(4px);
-      
-      /* 🌟QRとURLを横に並べる魔法のレイアウト */
       display: flex; 
-      flex-direction: row; 
+      flex-direction: column; 
       align-items: center; 
-      gap: 10px; /* QRと文字の隙間 */
-      
-      pointer-events: none; /* タップ検知は下の hotspot に任せる */
+      gap: 1px;
+      pointer-events: none; /* タップ検知は .coord-target に任せる */
     }
-    
-    /* 🌟QRコードのサイズを一回り小さく固定 */
     .back-info img {
-      width: 35px; /* 🌟小さく調整 */
-      height: 35px;
+      width: 100%;
+      height: auto;
+      aspect-ratio: 1/1;
       display: block;
       mix-blend-mode: multiply; /* 白背景に自然に馴染ませる */
     }
-    
-    /* URLテキストのレイアウト */
-    .back-info-text {
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      text-align: left;
-    }
-    
-    /* "WEB SITE" のタイトル */
-    .back-info-title {
-      font-size: 7px; /* 🌟小さく調整 */
-      font-weight: 900;
-      letter-spacing: 0.1em;
-      color: #555; /* 少し落ち着いた色 */
-      margin-bottom: 2px;
-    }
-    
-    /* URL本体 */
-    .back-info-url {
-      font-size: 9px; /* 🌟小さく調整 */
-      font-weight: 600;
+    .back-info-label {
+      font-size: 6px; /* 極限まで小さく */
+      font-weight: 800;
       letter-spacing: 0.05em;
-      color: #111;
+      margin-top: 2px;
       font-family: 'Inter', sans-serif;
     }
 
@@ -271,16 +250,13 @@
             
             <img id="viewBackImg" src="IMG_7546うら.jpg" class="card-face-image" alt="名刺裏面画像" onerror="this.src='https://placehold.jp/910x550.png?text=裏面画像が見つかりません';">
             
-            <!-- 🌟究極の再設計: 【裏面】QRコードとURLを横並びで美しく配置 -->
+            <!-- 🌟QRコードを左下にコンパクトに配置 -->
             <div class="back-info" id="qrContainer">
               <img id="qrCode" src="" alt="QR">
-              <div class="back-info-text">
-                <div class="back-info-title">WEB SITE</div>
-                <div class="back-info-url" id="websiteText">https://kyokutoukougyou.net/</div>
-              </div>
+              <div class="back-info-label">WEB SITE</div>
             </div>
 
-            <!-- 🌟裏面のWEBサイトへのリンク領域（上記のすりガラス枠の上に被せる） -->
+            <!-- 🌟裏面のWEBサイトへのリンク領域（QRの上に被せる） -->
             <a id="linkWeb" href="#" target="_blank" rel="noopener" class="coord-target" onclick="event.stopPropagation()"></a>
           </div>
 
@@ -494,7 +470,7 @@
     let isFlippingNow = false;
     
     function flipCard(e) {
-      // リンクがタップされた場合は反転させない
+      // リンク(aタグ)がタップされた場合は裏返さない
       if (e && e.target && e.target.tagName.toLowerCase() === 'a') return; 
       
       if (isFlippingNow) return;
@@ -508,16 +484,13 @@
       const back = document.getElementById('cardBack');
 
       setTimeout(() => {
+        // pointer-events だけを切り替え、visibility: hidden の悪さを防ぐ
         if (isFlipped) {
-          front.style.visibility = 'hidden';
           front.style.pointerEvents = 'none';
-          back.style.visibility = 'visible';
-          back.style.pointerEvents = 'auto'; // 裏面のリンクを有効化
+          back.style.pointerEvents = 'auto'; 
         } else {
-          back.style.visibility = 'hidden';
           back.style.pointerEvents = 'none';
-          front.style.visibility = 'visible';
-          front.style.pointerEvents = 'auto'; // 表面のリンクを有効化
+          front.style.pointerEvents = 'auto'; 
         }
       }, 300);
 
@@ -643,16 +616,14 @@
       // QRコードの反映とホットスポット位置
       const webUrl = document.getElementById('inputVCardWeb').value;
       if(webUrl) {
-        // 余計なURL表示は消し、短いURLだけ残す
         document.getElementById('qrCode').src = "https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=" + encodeURIComponent(webUrl);
-        document.getElementById('websiteText').textContent = webUrl.replace(/^https?:\/\//, ''); // URLから http:// を除去して表示
         
         const webBack = document.getElementById('linkWeb');
-        // 左下に配置したQR領域に被せる (X: 45付近, Y: 430付近)
-        webBack.style.setProperty('--el-x', 45);  
+        // 左下の極小QR領域に被せる (X: 40, Y: 430付近)
+        webBack.style.setProperty('--el-x', 30);  
         webBack.style.setProperty('--el-y', 430); 
-        webBack.style.setProperty('--el-w', 220); // 横長の領域に合わせて拡大
-        webBack.style.setProperty('--el-h', 60);  
+        webBack.style.setProperty('--el-w', 80); 
+        webBack.style.setProperty('--el-h', 90);  
         webBack.href = webUrl;
       }
 
