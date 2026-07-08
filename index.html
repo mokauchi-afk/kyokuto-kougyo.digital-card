@@ -99,30 +99,30 @@
     }
 
     /* =========================================================================
-       🌟 究極の修正: 【裏面】QRコードの文字被り防止（左下ギリギリに極小配置・横並び）
+       👑 最終確定版: 【裏面】QRコードの文字被りゼロ（極限まで小さく・左下・横並び）
        ========================================================================= */
     .back-info {
       position: absolute; 
-      left: 2%; /* 左端限界まで寄せる */
-      bottom: 3%; /* 下端限界まで寄せる */
+      left: 1%; /* 左端の限界 */
+      bottom: 2%; /* 下端の限界 */
       z-index: 30;
       color: #111; 
-      background: rgba(255, 255, 255, 0.85); /* すりガラス調 */
-      padding: 4px 6px; 
+      background: rgba(255, 255, 255, 0.7); /* 透け感を強める */
+      padding: 3px 5px; /* 余白を極限まで削る */
       border-radius: 4px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-      backdrop-filter: blur(4px);
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      backdrop-filter: blur(2px);
       display: flex; 
-      flex-direction: row; /* 横並びレイアウト */
+      flex-direction: row; /* 横並び */
       align-items: center; 
-      gap: 5px;
-      pointer-events: none; /* タップ検知は .coord-target に任せる */
+      gap: 4px; /* QRと文字の隙間を狭く */
+      pointer-events: none;
     }
     .back-info img {
-      width: 26px; /* QRコードを一回り極小化 */
-      height: 26px;
+      width: 22px; /* QRコードを極小化（これ以上小さいと読めない限界サイズ） */
+      height: 22px;
       display: block;
-      mix-blend-mode: multiply; /* 白背景に自然に馴染ませる */
+      mix-blend-mode: multiply;
     }
     .back-info-text {
       display: flex;
@@ -131,7 +131,7 @@
       justify-content: center;
     }
     .back-info-label {
-      font-size: 5px; /* 極限まで小さく */
+      font-size: 5px; /* 極小フォント */
       font-weight: 800;
       letter-spacing: 0.05em;
       color: #555;
@@ -140,11 +140,12 @@
       margin-bottom: 1px;
     }
     .back-info-url {
-      font-size: 7.5px; /* URLを一回り小さく */
+      font-size: 6.5px; /* URLのフォントサイズも限界まで縮小 */
       font-weight: 700;
       font-family: 'Inter', sans-serif;
-      white-space: nowrap; /* 絶対に改行させない */
+      white-space: nowrap; /* 1行を強制 */
       line-height: 1;
+      letter-spacing: -0.02em; /* 文字間を少し詰める */
     }
 
     /* =========================================================================
