@@ -634,7 +634,7 @@
       const cleanAddress = document.getElementById('inputVCardAddr').value.replace(/〒?\d{3}-\d{4}\s*/, '');
       linkAddr.href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(cleanAddress)}`;
       
-      // 各種リンクの反映
+      // 🌟修正済: 各種リンクの反映
       document.getElementById('linkTel').href = `tel:${document.getElementById('inputVCardTel').value.replace(/[^\d-]/g, '')}`;
       document.getElementById('linkFax').href = `tel:${document.getElementById('inputVCardFax').value.replace(/[^\d-]/g, '')}`;
       document.getElementById('linkMobile').href = `tel:${document.getElementById('inputVCardMobile').value.replace(/[^\d-]/g, '')}`;
