@@ -99,40 +99,52 @@
     }
 
     /* =========================================================================
-       🌟 究極の修正: 【裏面】QRコードの文字被り防止（左下ギリギリに極小配置）
+       🌟 究極の修正: 【裏面】QRコードの文字被り防止（左下ギリギリに極小配置・横並び）
        ========================================================================= */
     .back-info {
       position: absolute; 
-      left: 4%; /* 左端ギリギリへ移動 */
-      bottom: 4%; /* 下端ギリギリへ移動 */
-      width: 48px; /* さらに一回り縮小して被りを回避 */
-      text-align: center; 
+      left: 2%; /* 左端限界まで寄せる */
+      bottom: 3%; /* 下端限界まで寄せる */
       z-index: 30;
       color: #111; 
       background: rgba(255, 255, 255, 0.85); /* すりガラス調 */
-      padding: 4px; 
+      padding: 4px 6px; 
       border-radius: 4px;
       box-shadow: 0 4px 10px rgba(0,0,0,0.2);
       backdrop-filter: blur(4px);
       display: flex; 
-      flex-direction: column; 
+      flex-direction: row; /* 横並びレイアウト */
       align-items: center; 
-      gap: 1px;
+      gap: 5px;
       pointer-events: none; /* タップ検知は .coord-target に任せる */
     }
     .back-info img {
-      width: 100%;
-      height: auto;
-      aspect-ratio: 1/1;
+      width: 26px; /* QRコードを一回り極小化 */
+      height: 26px;
       display: block;
       mix-blend-mode: multiply; /* 白背景に自然に馴染ませる */
     }
+    .back-info-text {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      justify-content: center;
+    }
     .back-info-label {
-      font-size: 6px; /* 極限まで小さく */
+      font-size: 5px; /* 極限まで小さく */
       font-weight: 800;
       letter-spacing: 0.05em;
-      margin-top: 2px;
+      color: #555;
       font-family: 'Inter', sans-serif;
+      line-height: 1;
+      margin-bottom: 1px;
+    }
+    .back-info-url {
+      font-size: 7.5px; /* URLを一回り小さく */
+      font-weight: 700;
+      font-family: 'Inter', sans-serif;
+      white-space: nowrap; /* 絶対に改行させない */
+      line-height: 1;
     }
 
     /* =========================================================================
@@ -250,13 +262,16 @@
             
             <img id="viewBackImg" src="IMG_7546うら.jpg" class="card-face-image" alt="名刺裏面画像" onerror="this.src='https://placehold.jp/910x550.png?text=裏面画像が見つかりません';">
             
-            <!-- 🌟QRコードを左下にコンパクトに配置 -->
+            <!-- 🌟QRコードとURLを左下限界にコンパクト配置（横並び） -->
             <div class="back-info" id="qrContainer">
               <img id="qrCode" src="" alt="QR">
-              <div class="back-info-label">WEB SITE</div>
+              <div class="back-info-text">
+                <div class="back-info-label">WEB SITE</div>
+                <div class="back-info-url" id="websiteText"></div>
+              </div>
             </div>
 
-            <!-- 🌟裏面のWEBサイトへのリンク領域（QRの上に被せる） -->
+            <!-- 🌟裏面のWEBサイトへのリンク領域（QR枠全体の上に被せる） -->
             <a id="linkWeb" href="#" target="_blank" rel="noopener" class="coord-target" onclick="event.stopPropagation()"></a>
           </div>
 
@@ -613,18 +628,29 @@
       document.getElementById('linkMobile').href = `tel:${document.getElementById('inputVCardMobile').value.replace(/[^\d-]/g, '')}`;
       document.getElementById('linkEmail').href = `mailto:${document.getElementById('inputVCardEmail').value.trim()}`;
 
-      // QRコードの反映とホットスポット位置
+      // 🌟究極の修正: QRコードとURLの反映、極限までコンパクトな横並び配置
       const webUrl = document.getElementById('inputVCardWeb').value;
       if(webUrl) {
-        document.getElementById('qrCode').src = "https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=" + encodeURIComponent(webUrl);
+        document.getElementById('qrCode').src = "https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=" + encodeURIComponent(webUrl);
+        
+        // URL表示を極限までスッキリさせる (https:// と 末尾の / を削除)
+        let displayUrl = webUrl.replace(/^https?:\/\//, '');
+        if(displayUrl.endsWith('/')) displayUrl = displayUrl.slice(0, -1);
+        document.getElementById('websiteText').textContent = displayUrl;
         
         const webBack = document.getElementById('linkWeb');
-        // 左下の極小QR領域に被せる (X: 40, Y: 430付近)
-        webBack.style.setProperty('--el-x', 30);  
-        webBack.style.setProperty('--el-y', 430); 
-        webBack.style.setProperty('--el-w', 80); 
-        webBack.style.setProperty('--el-h', 90);  
+        // 左下ギリギリのQR領域全体に被せる (X: 18, Y: 470付近)
+        webBack.style.setProperty('--el-x', 18);  
+        webBack.style.setProperty('--el-y', 470); 
+        webBack.style.setProperty('--el-w', 160); 
+        webBack.style.setProperty('--el-h', 50);  
         webBack.href = webUrl;
+        
+        document.getElementById('qrContainer').style.display = 'flex';
+        webBack.style.display = 'block';
+      } else {
+        document.getElementById('qrContainer').style.display = 'none';
+        document.getElementById('linkWeb').style.display = 'none';
       }
 
       // エフェクトの反映
