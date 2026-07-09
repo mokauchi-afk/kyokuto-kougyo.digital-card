@@ -67,14 +67,16 @@
     .card-front { transform: rotateY(0deg) translateZ(1px); z-index: 2; }
     .card-back { transform: rotateY(180deg) translateZ(1px); z-index: 1; pointer-events: none; }
 
-    /* 🌟究極のエンボス強化：画像のコントラストを上げ、微妙な影を落として浮き出しを強調 */
+    /* 🌟究極のエンボス強化：画像自体のコントラストと陰影をダイレクトに引き上げる */
     .card-face-image {
       position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 2; pointer-events: none;
+      transition: filter 0.3s ease;
     }
     
     /* スタジオの「エンボス」チェック時のみ適用される強力な浮き出しフィルター */
     .has-emboss-filter .card-face-image {
-      filter: contrast(1.15) brightness(0.95) drop-shadow(1px 2px 2px rgba(0,0,0,0.4));
+      /* 枠の影ではなく、画像内の色差を強制的に強調してエンボスロゴをくっきりさせる */
+      filter: contrast(1.4) brightness(0.92) saturate(1.1);
     }
 
     /* =========================================================================
@@ -104,30 +106,28 @@
     }
 
     /* =========================================================================
-       👑 究極・完全なる被りゼロ: 【裏面】QRコード配置（左下限界・強制縮小・横並び）
+       👑 究極・完全なる被りゼロ: 【裏面】QRコード配置（文字被り回避・適正サイズ版）
        ========================================================================= */
     .back-info {
       position: absolute; 
-      left: 2%; /* 限界まで左に */
-      bottom: 2%; /* 限界まで下に */
+      left: 3%; /* 限界すぎず、適度な左寄り */
+      bottom: 3%; /* 限界すぎず、適度な下寄り */
       z-index: 30;
       color: #111; 
       background: rgba(255, 255, 255, 0.85); /* すりガラス調 */
-      padding: 3px 5px; /* 余白を極限まで削る */
+      padding: 4px 6px; /* 余白を適度に戻す */
       border-radius: 4px;
       box-shadow: 0 2px 8px rgba(0,0,0,0.15);
       backdrop-filter: blur(4px);
       display: flex; 
       flex-direction: row; 
       align-items: center; 
-      gap: 4px; 
+      gap: 5px; 
       pointer-events: none; /* タップ検知は .coord-target に任せる */
-      transform: scale(0.8); /* 🌟全体をさらに強制縮小して絶対被らないようにする */
-      transform-origin: bottom left;
     }
     .back-info img {
-      width: 28px; /* 読み取れる限界の極小サイズ */
-      height: 28px;
+      width: 30px; /* 見やすい元のサイズに戻す */
+      height: 30px;
       display: block;
       mix-blend-mode: multiply;
     }
@@ -147,7 +147,7 @@
       margin-bottom: 1px;
     }
     .back-info-url {
-      font-size: 7px; /* 限界まで小さく */
+      font-size: 8px; /* 視認性を確保できるサイズに戻す */
       font-weight: 700;
       font-family: 'Inter', sans-serif;
       white-space: nowrap; /* 絶対に改行させない */
@@ -269,7 +269,7 @@
             
             <img id="viewBackImg" src="IMG_7546うら.jpg" class="card-face-image" alt="名刺裏面画像" onerror="this.src='https://placehold.jp/910x550.png?text=裏面画像が見つかりません';">
             
-            <!-- 🌟QRコードとURLを左下に配置（強制縮小・横並び） -->
+            <!-- 🌟QRコードとURLを左下に配置（適正サイズ・横並び） -->
             <div class="back-info" id="qrContainer">
               <img id="qrCode" src="" alt="QR">
               <div class="back-info-text">
@@ -640,7 +640,7 @@
       document.getElementById('linkMobile').href = `tel:${document.getElementById('inputVCardMobile').value.replace(/[^\d-]/g, '')}`;
       document.getElementById('linkEmail').href = `mailto:${document.getElementById('inputVCardEmail').value.trim()}`;
 
-      // 🌟究極の修正: QRコードとURLの反映、極限までコンパクトな横並び配置
+      // 🌟究極の修正: QRコードとURLの反映、適正サイズな横並び配置
       const webUrl = document.getElementById('inputVCardWeb').value;
       if(webUrl) {
         // httpがない場合は補完してQR生成・リンクに使う（404エラー防止）
@@ -653,11 +653,11 @@
         document.getElementById('websiteText').textContent = displayUrl;
         
         const webBack = document.getElementById('linkWeb');
-        // 左下限界ギリギリのQR領域全体に被せる (X: 18, Y: 490付近)
-        webBack.style.setProperty('--el-x', 18);  
-        webBack.style.setProperty('--el-y', 490); 
-        webBack.style.setProperty('--el-w', 120); 
-        webBack.style.setProperty('--el-h', 45);  
+        // 左下のQR領域全体に被せる
+        webBack.style.setProperty('--el-x', 20);  
+        webBack.style.setProperty('--el-y', 480); 
+        webBack.style.setProperty('--el-w', 160); 
+        webBack.style.setProperty('--el-h', 50);  
         webBack.href = safeUrl;
         
         document.getElementById('qrContainer').style.display = 'flex';
