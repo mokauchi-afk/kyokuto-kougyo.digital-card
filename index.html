@@ -14,6 +14,9 @@
   <script src="https://cdn.tailwindcss.com"></script>
 
   <style>
+    /* =========================================================================
+       ベースレイアウト & 背景
+       ========================================================================= */
     :root { --effect-color: #d4af37; }
     
     body {
@@ -33,17 +36,25 @@
       background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
     }
 
+    /* =========================================================================
+       3D名刺ステージ & 傾き・反転構造
+       ========================================================================= */
     .card-theater {
       position: relative; width: 100%; max-width: 480px; aspect-ratio: 91/55; perspective: 2500px; z-index: 10; margin: 0 auto;
     }
 
-    .card-tilt { width: 100%; height: 100%; transform-style: preserve-3d; }
+    /* 傾き(Tilt)専用の箱 */
+    .card-tilt { 
+      width: 100%; height: 100%; transform-style: preserve-3d; 
+    }
 
+    /* 反転(Flip)専用の箱 */
     .card-container {
       width: 100%; height: 100%; transform-style: preserve-3d; transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1); position: relative; cursor: pointer; -webkit-tap-highlight-color: transparent;
     }
     .card-container.is-flipped { transform: rotateY(180deg); }
 
+    /* 3D面の基本設定 (スマホで消えるバグの完全防御) */
     .card-face {
       position: absolute; inset: 0; width: 100%; height: 100%;
       backface-visibility: hidden; -webkit-backface-visibility: hidden;
@@ -54,23 +65,33 @@
     }
 
     .card-front { transform: rotateY(0deg) translateZ(1px); z-index: 2; }
-    .card-back { transform: rotateY(180deg) translateZ(1px); z-index: 1; }
+    .card-back { transform: rotateY(180deg) translateZ(1px); z-index: 1; pointer-events: none; }
 
+    /* 🌟究極のエンボス強化：画像のコントラストを上げ、微妙な影を落として浮き出しを強調 */
     .card-face-image {
       position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 2; pointer-events: none;
     }
+    
+    /* スタジオの「エンボス」チェック時のみ適用される強力な浮き出しフィルター */
+    .has-emboss-filter .card-face-image {
+      filter: contrast(1.15) brightness(0.95) drop-shadow(1px 2px 2px rgba(0,0,0,0.4));
+    }
 
+    /* =========================================================================
+       透明タップ領域（ホットスポット）: リンクを確実に起動させる
+       ========================================================================= */
     .coord-target {
       position: absolute;
       left: calc(var(--el-x, 0) / 910 * 100%); top: calc(var(--el-y, 0) / 550 * 100%);
       width: calc(var(--el-w, 100) / 910 * 100%); height: calc(var(--el-h, 50) / 550 * 100%);
-      z-index: 50;
+      z-index: 50; /* エフェクトよりも前面に出して確実にタップ可能にする */
       border: 1px dashed rgba(206, 186, 140, 0.0); transition: border-color 0.2s ease, background-color 0.2s ease; 
       cursor: pointer; -webkit-tap-highlight-color: rgba(255,255,255,0.2);
-      pointer-events: auto;
+      pointer-events: auto; /* クリックを確実に検知 */
     }
     .edit-mode-active .coord-target { border: 1px dashed rgba(206, 186, 140, 0.75) !important; background-color: rgba(206, 186, 140, 0.15) !important; }
 
+    /* 箔押しロゴエフェクト */
     .foil-logo {
       position: absolute; z-index: 20; pointer-events: none;
       filter: brightness(1.8) contrast(1.5) drop-shadow(0 0 8px gold) drop-shadow(0 2px 2px rgba(0,0,0,.6));
@@ -82,81 +103,173 @@
       100% { transform: translateY(0); filter: brightness(1.4) drop-shadow(0 0 4px gold); }
     }
 
-    /* 👑 究極の配置: 左下限界・超極小・被りゼロ */
+    /* =========================================================================
+       👑 究極・完全なる被りゼロ: 【裏面】QRコード配置（左下限界・強制縮小・横並び）
+       ========================================================================= */
     .back-info {
       position: absolute; 
-      left: 2.5%; 
-      bottom: 2.5%; 
+      left: 2%; /* 限界まで左に */
+      bottom: 2%; /* 限界まで下に */
       z-index: 30;
       color: #111; 
-      background: rgba(255, 255, 255, 0.85); 
-      padding: 3px 4px; 
+      background: rgba(255, 255, 255, 0.85); /* すりガラス調 */
+      padding: 3px 5px; /* 余白を極限まで削る */
       border-radius: 4px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-      backdrop-filter: blur(2px);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+      backdrop-filter: blur(4px);
       display: flex; 
       flex-direction: row; 
       align-items: center; 
-      gap: 3px; 
-      pointer-events: none; 
-      transform: scale(0.65); /* 限界まで縮小 */
+      gap: 4px; 
+      pointer-events: none; /* タップ検知は .coord-target に任せる */
+      transform: scale(0.8); /* 🌟全体をさらに強制縮小して絶対被らないようにする */
       transform-origin: bottom left;
     }
-    .back-info img { width: 22px; height: 22px; display: block; mix-blend-mode: multiply; }
-    .back-info-text { display: flex; flex-direction: column; align-items: flex-start; justify-content: center; }
-    .back-info-label { font-size: 5px; font-weight: 800; letter-spacing: 0.05em; color: #666; line-height: 1; }
-    .back-info-url { font-size: 6px; font-weight: 700; white-space: nowrap; line-height: 1; }
+    .back-info img {
+      width: 28px; /* 読み取れる限界の極小サイズ */
+      height: 28px;
+      display: block;
+      mix-blend-mode: multiply;
+    }
+    .back-info-text {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      justify-content: center;
+    }
+    .back-info-label {
+      font-size: 6px; 
+      font-weight: 800;
+      letter-spacing: 0.05em;
+      color: #666;
+      font-family: 'Inter', sans-serif;
+      line-height: 1;
+      margin-bottom: 1px;
+    }
+    .back-info-url {
+      font-size: 7px; /* 限界まで小さく */
+      font-weight: 700;
+      font-family: 'Inter', sans-serif;
+      white-space: nowrap; /* 絶対に改行させない */
+      line-height: 1;
+    }
+
+    /* =========================================================================
+       光の反射・枠線エフェクト
+       ========================================================================= */
+    .card-shine { position: absolute; inset: 0; pointer-events: none; z-index: 5; opacity: 0; transition: opacity 0.3s ease; background-size: 300% 300%; background-position: 100% 100%; mix-blend-mode: overlay; background: linear-gradient(115deg, transparent 20%, rgba(255,255,255,0.3) 40%, rgba(255,228,242,0.3) 50%, transparent 70%); }
+    .has-pearl-shine .card-shine { opacity: 1; }
+
+    @keyframes shineSweep { 0% { left: -120%; opacity: 0; } 15% { opacity: 0.8; } 30% { left: 120%; opacity: 0; } 100% { left: 120%; opacity: 0; } }
+    .card-sweep-light { position: absolute; top: -50%; height: 200%; width: clamp(20px, 10vw, 60px); background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4) 45%, rgba(255, 255, 255, 0.65) 50%, rgba(255, 255, 255, 0.4) 55%, transparent); transform: rotate(25deg); pointer-events: none; z-index: 4; display: none; }
+    .has-sweep-shine .card-sweep-light { display: block; animation: shineSweep 5s cubic-bezier(0.3, 0.8, 0.3, 1) infinite; }
+
+    @keyframes borderSweep { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    .card-border-light-wrap { position: absolute; inset: -150%; z-index: 0; pointer-events: none; display: none; align-items: center; justify-content: center; }
+    .card-border-light { width: 100%; height: 100%; background: conic-gradient(transparent 70%, var(--effect-color, #ceba8c) 88%, #ffffff 94%, var(--effect-color, #ceba8c) 98%, transparent 100%); animation: borderSweep 5s linear infinite; }
+    .card-border-mask { position: absolute; inset: 2px; background: inherit; border-radius: inherit; z-index: 1; pointer-events: none; }
+    .has-border-sweep .card-border-light-wrap { display: flex; }
 
     /* トースト通知 */
     #toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #111; border: 1px solid #d4af37; color: #d4af37; padding: 12px 24px; border-radius: 30px; font-size: 13px; z-index: 9999; display: none; white-space: nowrap; box-shadow: 0 4px 12px rgba(0,0,0,0.5);}
+
+    /* Scrollbar for studio */
     .custom-scrollbar::-webkit-scrollbar { width: 6px; }
     .custom-scrollbar::-webkit-scrollbar-track { background: #110f0d; }
     .custom-scrollbar::-webkit-scrollbar-thumb { background: #33281e; border-radius: 3px; }
   </style>
 
+  <!-- 裏面画像の拡張子を "IMG_7546うら.jpg" で固定 -->
   <script id="gas-data" type="application/json">
   {
     "id": "nozaki_m",
     "companyName": "極東興業株式会社",
     "name": "野﨑 元宏",
     "title": "営業部長",
+    "postalCode": "761-0312",
     "address": "香川県高松市東山崎町347-7",
     "tel_main": "087-847-6116",
     "fax": "087-847-6195",
     "tel_mobile": "080-1992-2079",
     "email": "kyokuto@mwb.biglobe.ne.jp",
     "website": "https://kyokutoukougyou.net/", 
+    "businessLines": "クレンカー作業 / 鉄骨建家 / 諸機械据付 / 重量物運搬",
     "frontImg": "IMG_7545.jpg",
-    "backImg": "IMG_7546うら.jpg"
+    "backImg": "IMG_7546うら.jpg", 
+    "emboss": true,
+    "pearl": false,
+    "sweepShine": true,
+    "borderSweep": false,
+    "effectColor": "#d4af37",
+    "coords": {
+      "a": { "x": 32, "y": 60, "w": 56, "h": 6 },
+      "t1": { "x": 55, "y": 67, "w": 35, "h": 6 },
+      "f": { "x": 55, "y": 73, "w": 35, "h": 6 },
+      "t2": { "x": 55, "y": 78, "w": 35, "h": 6 },
+      "e": { "x": 32, "y": 84, "w": 58, "h": 7 },
+      "w": { "x": 15, "y": 10, "w": 72, "h": 18 },
+      "logo": { "x": 5.5, "y": 9, "w": 11, "h": 18 } 
+    }
   }
   </script>
 </head>
 <body class="flex flex-col lg:flex-row items-stretch justify-start min-h-screen relative" id="mainBody">
 
+  <!-- =======================================================================
+       LEFT: MAIN VISUAL PREVIEW AREA
+       ======================================================================= -->
   <div class="flex-1 flex flex-col items-center justify-center p-6 md:p-12 space-y-8 relative">
+    
     <div class="text-center space-y-1">
       <span class="text-[9px] tracking-[0.35em] uppercase text-[#ceba8c] font-bold">Paper-Faithful Digital Twin</span>
       <h2 id="dispCompany" class="text-md md:text-lg font-bold tracking-widest text-white font-sans">極東興業株式会社</h2>
     </div>
 
+    <!-- 3D Card Stage wrapper -->
     <div class="card-theater" id="cardStage">
+      <!-- 傾き(tilt)の箱 -->
       <div class="card-tilt" id="cardTilt">
+        <!-- 反転(flip)の箱 -->
         <div class="card-container" id="cardContainer">
           
+          <!-- FRONT FACE (表面) -->
           <div class="card-face card-front" id="cardFront">
-            <img id="viewFrontImg" src="IMG_7545.jpg" class="card-face-image" alt="表面" onerror="this.src='https://placehold.jp/910x550.png?text=表面'">
+            <div class="card-border-light-wrap" id="borderSweepWrap">
+              <div class="card-border-light" id="borderSweepElement"></div>
+            </div>
+            <div class="card-border-mask"></div>
+
+            <div class="card-shine" id="shineFront"></div>
+            <div class="card-sweep-light" id="sweepFront"></div>
+            
+            <img id="viewFrontImg" src="IMG_7545.jpg" class="card-face-image" alt="名刺表面画像" onerror="this.src='https://placehold.jp/910x550.png?text=表面画像が見つかりません';">
+
+            <!-- 連絡先ホットスポット (Z-index:50で確実にタップ可能) -->
             <div class="card-inner-targets">
-              <a id="linkAddr" href="#" target="_blank" class="coord-target" style="--el-x: 320; --el-y: 380; --el-w: 520; --el-h: 40;"></a>
-              <a id="linkTel" href="#" class="coord-target" style="--el-x: 320; --el-y: 420; --el-w: 520; --el-h: 30;"></a>
-              <a id="linkFax" href="#" class="coord-target" style="--el-x: 320; --el-y: 450; --el-w: 520; --el-h: 30;"></a>
-              <a id="linkMobile" href="#" class="coord-target" style="--el-x: 320; --el-y: 470; --el-w: 520; --el-h: 30;"></a>
-              <a id="linkEmail" href="#" class="coord-target" style="--el-x: 320; --el-y: 500; --el-w: 520; --el-h: 30;"></a>
+              <a id="linkAddr" href="#" target="_blank" rel="noopener noreferrer" class="coord-target" style="--el-x: 320; --el-y: 380; --el-w: 520; --el-h: 40;" title="Googleマップで場所を表示"></a>
+              <a id="linkTel" href="#" class="coord-target" style="--el-x: 320; --el-y: 420; --el-w: 520; --el-h: 30;" title="電話を発信"></a>
+              <a id="linkFax" href="#" class="coord-target" style="--el-x: 320; --el-y: 450; --el-w: 520; --el-h: 30;" title="FAX"></a>
+              <a id="linkMobile" href="#" class="coord-target" style="--el-x: 320; --el-y: 470; --el-w: 520; --el-h: 30;" title="携帯電話を発信"></a>
+              <a id="linkEmail" href="#" class="coord-target" style="--el-x: 320; --el-y: 500; --el-w: 520; --el-h: 30;" title="メールを送信"></a>
+              
+              <!-- 箔押しロゴ -->
+              <img id="logoFoil" src="logo.png" class="foil-logo" alt="ロゴ" style="--el-x: 50; --el-y: 50; --el-w: 100; --el-h: 100;" onerror="this.style.display='none';">
             </div>
           </div>
 
+          <!-- BACK FACE (裏面) -->
           <div class="card-face card-back" id="cardBack">
-            <img id="viewBackImg" src="IMG_7546うら.jpg" class="card-face-image" alt="裏面" onerror="this.src='https://placehold.jp/910x550.png?text=裏面'">
+            <div class="card-border-light-wrap" id="borderSweepWrapBack">
+              <div class="card-border-light" id="borderSweepElementBack"></div>
+            </div>
+            <div class="card-border-mask"></div>
+
+            <div class="card-shine" id="shineBack"></div>
+            <div class="card-sweep-light" id="sweepBack"></div>
             
+            <img id="viewBackImg" src="IMG_7546うら.jpg" class="card-face-image" alt="名刺裏面画像" onerror="this.src='https://placehold.jp/910x550.png?text=裏面画像が見つかりません';">
+            
+            <!-- 🌟QRコードとURLを左下に配置（強制縮小・横並び） -->
             <div class="back-info" id="qrContainer">
               <img id="qrCode" src="" alt="QR">
               <div class="back-info-text">
@@ -164,96 +277,452 @@
                 <div class="back-info-url" id="websiteText"></div>
               </div>
             </div>
-            <a id="linkWeb" href="#" target="_blank" class="coord-target" style="--el-x: 18; --el-y: 480; --el-w: 120; --el-h: 60;" onclick="event.stopPropagation()"></a>
+
+            <!-- 🌟裏面のWEBサイトへのリンク領域（QR枠全体の上に被せる） -->
+            <a id="linkWeb" href="#" target="_blank" rel="noopener" class="coord-target" onclick="event.stopPropagation()"></a>
           </div>
 
         </div>
       </div>
     </div>
 
+    <!-- ── FIXED EXTERNAL CONTROL ACTIONS ── -->
     <div class="w-full max-w-xs flex flex-col gap-3 pt-2">
+      <!-- フリップボタン -->
       <button id="btnFlipExternal" onclick="flipCardFromBtn()" class="w-full py-3 bg-[#171412] text-gray-300 border border-gray-800 rounded-lg font-sans text-xs flex items-center justify-center gap-2 hover:border-[#ceba8c] hover:text-[#ceba8c] transition active:scale-[0.97] duration-150 relative z-20">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
         <span id="btnFlipText">裏面を表示する（タップ回転）</span>
       </button>
+
+      <!-- vCardダウンロードボタン -->
       <button onclick="downloadVCard()" class="w-full py-3.5 bg-gradient-to-r from-[#211a13] via-[#120e0a] to-[#211a13] text-[#ceba8c] border border-[#6b5842] rounded-lg font-serif tracking-[0.2em] text-xs flex items-center justify-center gap-2 shadow-xl hover:border-[#8e765a] hover:text-white transition active:scale-[0.97] duration-150 relative z-20">
+        <svg width="14" height="14" viewBox="0 0 20 20" fill="none">
+          <path d="M10 2v11M6 9l4 4 4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M3 16h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+        </svg>
         スマホの連絡先に保存する
       </button>
     </div>
+
   </div>
 
-  <button id="btnStudioTrigger" onclick="toggleStudioPanel()" class="fixed bottom-4 right-4 z-50 p-3.5 bg-[#1e1712]/95 text-[#ceba8c] border border-[#524131] rounded-full shadow-2xl hover:bg-[#30251c] active:scale-95 transition flex items-center justify-center hidden">スタジオ</button>
-  <div id="studioPanel" class="hidden w-full lg:w-[450px] bg-[#110f0d] border-l border-gray-800 p-6 flex-col overflow-y-auto max-h-screen custom-scrollbar z-40 relative">
-    <div class="space-y-4">
-      <h3 class="text-lg font-bold text-white mb-4">名刺編集スタジオ</h3>
-      <input type="text" id="inputVCardWeb" value="https://kyokutoukougyou.net/" class="w-full bg-[#2a2420] border border-gray-700 rounded px-2 py-1 text-white">
-      <input type="text" id="inputVCardAddr" value="〒761-0312 高松市東山崎町347-7" class="w-full bg-[#2a2420] border border-gray-700 rounded px-2 py-1 text-white">
-      <input type="text" id="inputVCardTel" value="(087) 847-6116(代)" class="w-full bg-[#2a2420] border border-gray-700 rounded px-2 py-1 text-white">
-      <input type="text" id="inputVCardEmail" value="kyokuto@mwb.biglobe.ne.jp" class="w-full bg-[#2a2420] border border-gray-700 rounded px-2 py-1 text-white">
+  <!-- =======================================================================
+       RIGHT: REAL-TIME EDITING STUDIO (Admin secret panel)
+       ======================================================================= -->
+  <button id="btnStudioTrigger" onclick="toggleStudioPanel()" class="fixed bottom-4 right-4 z-50 p-3.5 bg-[#1e1712]/95 text-[#ceba8c] border border-[#524131] rounded-full shadow-2xl hover:bg-[#30251c] active:scale-95 transition flex items-center justify-center hidden" title="秘密の編集スタジオ">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+    </svg>
+  </button>
+
+  <div id="studioPanel" class="hidden w-full lg:w-[450px] bg-[#110f0d] border-l border-gray-800 p-6 md:p-8 flex-col justify-between overflow-y-auto max-h-screen custom-scrollbar z-40 relative">
+    
+    <div class="space-y-6 font-sans">
+      <div>
+        <div class="flex items-center justify-between">
+          <h3 class="text-base font-bold text-white tracking-widest font-serif flex items-center gap-2">
+            <span class="text-[#ceba8c]">✦</span> 名刺編集スタジオ
+          </h3>
+          <button onclick="toggleStudioPanel()" class="text-gray-400 hover:text-white text-[10px] px-2.5 py-1 bg-gray-900 border border-gray-800 rounded">閉じる</button>
+        </div>
+      </div>
+
+      <div class="space-y-5 text-sm text-gray-300">
+        
+        <h4 class="text-[11px] font-bold text-[#ceba8c] tracking-widest uppercase border-b border-[#2d2319] pb-0.5 pt-2">🖼️ 名刺画像の設定</h4>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-[10px] font-semibold text-gray-400 mb-1">表面（画像URL）</label>
+            <input type="text" id="inputFrontImgUrl" value="IMG_7545.jpg" class="w-full bg-[#1b1714] border border-gray-700 rounded px-3 py-2 text-xs text-white focus:outline-none focus:border-[#ceba8c]">
+          </div>
+          <div>
+            <label class="block text-[10px] font-semibold text-gray-400 mb-1">裏面（画像URL）</label>
+            <input type="text" id="inputBackImgUrl" value="IMG_7546うら.jpg" class="w-full bg-[#1b1714] border border-gray-700 rounded px-3 py-2 text-xs text-white focus:outline-none focus:border-[#ceba8c]">
+          </div>
+        </div>
+
+        <h4 class="text-[11px] font-bold text-[#ceba8c] tracking-widest uppercase border-b border-[#2d2319] pb-0.5 pt-2">🎨 エフェクトセレクト</h4>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="flex items-center justify-between">
+            <span class="font-bold text-gray-300 text-[10px]">キラッと光線</span>
+            <input type="checkbox" id="toggleSweepShine" checked class="w-4 h-4 rounded text-[#ceba8c]">
+          </div>
+          <div class="flex items-center justify-between">
+            <span class="font-bold text-gray-300 text-[10px]">動く光る枠線</span>
+            <input type="checkbox" id="toggleBorderSweep" class="w-4 h-4 rounded text-[#ceba8c]">
+          </div>
+          <!-- 🌟追加：エンボス（浮き出し）強調オプション -->
+          <div class="flex items-center justify-between col-span-2">
+            <span class="font-bold text-gray-300 text-[10px]">ロゴ浮き出し強調（コントラスト/影）</span>
+            <input type="checkbox" id="toggleEmboss" checked class="w-4 h-4 rounded text-[#ceba8c]">
+          </div>
+        </div>
+
+        <h4 class="text-[11px] font-bold text-[#ceba8c] tracking-widest uppercase border-b border-[#2d2319] pb-0.5 pt-2">📐 タップ領域の微調整 (910x550)</h4>
+        <div class="flex items-center justify-between mb-2">
+          <p class="text-[9.5px] text-gray-400">画像の中の文字位置を調整できます。</p>
+          <button onclick="toggleEditGuides()" id="btnGuideToggle" class="px-2.5 py-1 bg-gray-800 border border-gray-700 hover:border-[#ceba8c] text-[10px] text-gray-300 rounded font-bold transition">編集ガイドを表示</button>
+        </div>
+
+        <div class="p-4 bg-[#181411] border border-gray-800 rounded-xl space-y-4 text-xs font-sans">
+          
+          <div class="space-y-2 border-b border-gray-800/60 pb-3">
+            <span class="font-bold text-gray-300 block">① 住所（Google Map連動）</span>
+            <div class="grid grid-cols-4 gap-2">
+              <div><label class="text-[8.5px] text-gray-500">X</label><input type="number" id="coordAddrX" value="320" class="w-full bg-[#2a2420] border border-gray-700 rounded p-1 text-center text-white"></div>
+              <div><label class="text-[8.5px] text-gray-500">Y</label><input type="number" id="coordAddrY" value="380" class="w-full bg-[#2a2420] border border-gray-700 rounded p-1 text-center text-white"></div>
+              <div><label class="text-[8.5px] text-gray-500">W</label><input type="number" id="coordAddrW" value="520" class="w-full bg-[#2a2420] border border-gray-700 rounded p-1 text-center text-white"></div>
+              <div><label class="text-[8.5px] text-gray-500">H</label><input type="number" id="coordAddrH" value="40" class="w-full bg-[#2a2420] border border-gray-700 rounded p-1 text-center text-white"></div>
+            </div>
+            <div class="mt-1">
+              <label class="block text-[9px] text-gray-500">連動する住所テキスト</label>
+              <input type="text" id="inputVCardAddr" value="〒761-0312 高松市東山崎町347-7" class="w-full bg-[#2a2420] border border-gray-700 rounded px-2 py-1 text-[11px] text-white">
+            </div>
+          </div>
+
+          <div class="space-y-2 border-b border-gray-800/60 pb-3">
+            <span class="font-bold text-gray-300 block">② 代表電話番号</span>
+            <div class="grid grid-cols-4 gap-2">
+              <div><label class="text-[8.5px] text-gray-500">X</label><input type="number" id="coordTelX" value="320" class="w-full bg-[#2a2420] border border-gray-700 rounded p-1 text-center text-white"></div>
+              <div><label class="text-[8.5px] text-gray-500">Y</label><input type="number" id="coordTelY" value="420" class="w-full bg-[#2a2420] border border-gray-700 rounded p-1 text-center text-white"></div>
+              <div><label class="text-[8.5px] text-gray-500">W</label><input type="number" id="coordTelW" value="520" class="w-full bg-[#2a2420] border border-gray-700 rounded p-1 text-center text-white"></div>
+              <div><label class="text-[8.5px] text-gray-500">H</label><input type="number" id="coordTelH" value="30" class="w-full bg-[#2a2420] border border-gray-700 rounded p-1 text-center text-white"></div>
+            </div>
+            <div class="mt-1">
+              <label class="block text-[9px] text-gray-500">連動する代表電話</label>
+              <input type="text" id="inputVCardTel" value="(087) 847-6116(代)" class="w-full bg-[#2a2420] border border-gray-700 rounded px-2 py-1 text-[11px] text-white">
+            </div>
+          </div>
+
+          <div class="space-y-2 border-b border-gray-800/60 pb-3">
+            <span class="font-bold text-gray-300 block">③ FAX番号</span>
+            <div class="grid grid-cols-4 gap-2">
+              <div><label class="text-[8.5px] text-gray-500">X</label><input type="number" id="coordFaxX" value="320" class="w-full bg-[#2a2420] border border-gray-700 rounded p-1 text-center text-white"></div>
+              <div><label class="text-[8.5px] text-gray-500">Y</label><input type="number" id="coordFaxY" value="450" class="w-full bg-[#2a2420] border border-gray-700 rounded p-1 text-center text-white"></div>
+              <div><label class="text-[8.5px] text-gray-500">W</label><input type="number" id="coordFaxW" value="520" class="w-full bg-[#2a2420] border border-gray-700 rounded p-1 text-center text-white"></div>
+              <div><label class="text-[8.5px] text-gray-500">H</label><input type="number" id="coordFaxH" value="30" class="w-full bg-[#2a2420] border border-gray-700 rounded p-1 text-center text-white"></div>
+            </div>
+            <div class="mt-1">
+              <label class="block text-[9px] text-gray-500">連動するFAX</label>
+              <input type="text" id="inputVCardFax" value="(087) 847-6195" class="w-full bg-[#2a2420] border border-gray-700 rounded px-2 py-1 text-[11px] text-white">
+            </div>
+          </div>
+
+          <div class="space-y-2 border-b border-gray-800/60 pb-3">
+            <span class="font-bold text-gray-300 block">④ 携帯電話</span>
+            <div class="grid grid-cols-4 gap-2">
+              <div><label class="text-[8.5px] text-gray-500">X</label><input type="number" id="coordMobileX" value="320" class="w-full bg-[#2a2420] border border-gray-700 rounded p-1 text-center text-white"></div>
+              <div><label class="text-[8.5px] text-gray-500">Y</label><input type="number" id="coordMobileY" value="470" class="w-full bg-[#2a2420] border border-gray-700 rounded p-1 text-center text-white"></div>
+              <div><label class="text-[8.5px] text-gray-500">W</label><input type="number" id="coordMobileW" value="520" class="w-full bg-[#2a2420] border border-gray-700 rounded p-1 text-center text-white"></div>
+              <div><label class="text-[8.5px] text-gray-500">H</label><input type="number" id="coordMobileH" value="30" class="w-full bg-[#2a2420] border border-gray-700 rounded p-1 text-center text-white"></div>
+            </div>
+            <div class="mt-1">
+              <label class="block text-[9px] text-gray-500">連動する携帯番号</label>
+              <input type="text" id="inputVCardMobile" value="080-1992-2079" class="w-full bg-[#2a2420] border border-gray-700 rounded px-2 py-1 text-[11px] text-white">
+            </div>
+          </div>
+
+          <div class="space-y-2 border-b border-gray-800/60 pb-3">
+            <span class="font-bold text-gray-300 block">⑤ E-mail</span>
+            <div class="grid grid-cols-4 gap-2">
+              <div><label class="text-[8.5px] text-gray-500">X</label><input type="number" id="coordEmailX" value="320" class="w-full bg-[#2a2420] border border-gray-700 rounded p-1 text-center text-white"></div>
+              <div><label class="text-[8.5px] text-gray-500">Y</label><input type="number" id="coordEmailY" value="500" class="w-full bg-[#2a2420] border border-gray-700 rounded p-1 text-center text-white"></div>
+              <div><label class="text-[8.5px] text-gray-500">W</label><input type="number" id="coordEmailW" value="520" class="w-full bg-[#2a2420] border border-gray-700 rounded p-1 text-center text-white"></div>
+              <div><label class="text-[8.5px] text-gray-500">H</label><input type="number" id="coordEmailH" value="30" class="w-full bg-[#2a2420] border border-gray-700 rounded p-1 text-center text-white"></div>
+            </div>
+            <div class="mt-1">
+              <label class="block text-[9px] text-gray-500">連動するEmail</label>
+              <input type="text" id="inputVCardEmail" value="kyokuto@mwb.biglobe.ne.jp" class="w-full bg-[#2a2420] border border-gray-700 rounded px-2 py-1 text-[11px] text-white">
+            </div>
+          </div>
+
+          <div class="space-y-2 pb-3">
+            <span class="font-bold text-gray-300 block">⑥ 連絡先保存（vCard）用テキスト</span>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="text-[9px] text-gray-500">会社名</label>
+                <input type="text" id="inputVCardCompany" value="極東興業株式会社" class="w-full bg-[#2a2420] border border-gray-700 rounded px-2 py-1 text-[11px] text-white">
+              </div>
+              <div>
+                <label class="text-[9px] text-gray-500">氏名</label>
+                <input type="text" id="inputVCardName" value="野崎元宏" class="w-full bg-[#2a2420] border border-gray-700 rounded px-2 py-1 text-[11px] text-white">
+              </div>
+              <div class="col-span-2">
+                <label class="text-[9px] text-gray-500">WEBサイトURL（裏面用）</label>
+                <input type="text" id="inputVCardWeb" value="https://kyokutoukougyou.net/" class="w-full bg-[#2a2420] border border-gray-700 rounded px-2 py-1 text-[11px] text-white">
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
   <div id="toast" class="fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-[#111] border border-[#d4af37] text-[#d4af37] px-6 py-3 rounded-full text-xs font-semibold tracking-wider hidden z-50"></div>
 
+  <!-- =======================================================================
+       CORE LOGIC
+       ======================================================================= -->
   <script>
-    const cardContainer = document.getElementById('cardContainer');
-    const cardTilt = document.getElementById('cardTilt');
-    let targetX = 0, targetY = 0, currentX = 0, currentY = 0;
+    let globalCardData = {};
 
-    function runLoop() {
+    const cardContainer = document.getElementById('cardContainer');
+    const cardTilt = document.getElementById('cardTilt'); 
+    let currentX = 0, currentY = 0, targetX = 0, targetY = 0;
+
+    // --- 3D Rotation Animation Loop ---
+    function runCardAnimationLoop() {
       currentX += (targetX - currentX) * 0.1;
       currentY += (targetY - currentY) * 0.1;
-      cardTilt.style.transform = `rotateX(${-currentY * 11}deg) rotateY(${currentX * 11}deg)`;
-      requestAnimationFrame(runLoop);
-    }
-    runLoop();
 
-    document.addEventListener('mousemove', e => {
-      targetX = (e.clientX - window.innerWidth/2) / (window.innerWidth/2);
-      targetY = (e.clientY - window.innerHeight/2) / (window.innerHeight/2);
+      const rotX = -currentY * 11;
+      const rotY = currentX * 11;
+      
+      // 傾きは cardTilt に適用
+      cardTilt.style.transform = `rotateX(${rotX}deg) rotateY(${rotY}deg)`;
+      requestAnimationFrame(runCardAnimationLoop);
+    }
+    requestAnimationFrame(runCardAnimationLoop);
+
+    document.addEventListener('mousemove', function(e) {
+      const cx = window.innerWidth / 2;
+      const cy = window.innerHeight / 2;
+      targetX = (e.clientX - cx) / cx;
+      targetY = (e.clientY - cy) / cy;
     });
+    document.addEventListener('mouseleave', function() { targetX = 0; targetY = 0; });
 
+    // --- 3Dフリップ時のチラつき・非表示防御 ---
     let isFlipped = false;
+    let isFlippingNow = false;
+    
     function flipCard(e) {
-      if(e && e.target.closest('a')) return;
+      // リンク(aタグ)がタップされた場合は裏返さない
+      if (e && e.target && e.target.tagName.toLowerCase() === 'a') return; 
+      
+      if (isFlippingNow) return;
+      isFlippingNow = true;
       isFlipped = !isFlipped;
+      
       cardContainer.classList.toggle('is-flipped', isFlipped);
-      document.getElementById('btnFlipText').textContent = isFlipped ? "表面を表示する" : "裏面を表示する";
+      document.getElementById('btnFlipText').textContent = isFlipped ? "表面を表示する（タップ回転）" : "裏面を表示する（タップ回転）";
+
+      const front = document.getElementById('cardFront');
+      const back = document.getElementById('cardBack');
+
+      setTimeout(() => {
+        // pointer-events だけを切り替え、visibility: hidden の悪さを防ぐ
+        if (isFlipped) {
+          front.style.pointerEvents = 'none';
+          back.style.pointerEvents = 'auto'; 
+        } else {
+          back.style.pointerEvents = 'none';
+          front.style.pointerEvents = 'auto'; 
+        }
+      }, 300);
+
+      setTimeout(() => {
+        isFlippingNow = false;
+      }, 600);
     }
-    cardContainer.addEventListener('click', flipCard);
+
     function flipCardFromBtn() { flipCard(null); }
+    cardContainer.addEventListener('click', flipCard);
+
+    // --- Studio Toggle ---
+    function toggleStudioPanel() {
+      const panel = document.getElementById('studioPanel');
+      panel.classList.toggle('hidden');
+      panel.classList.toggle('flex');
+    }
+
+    let guidesActive = false;
+    function toggleEditGuides() {
+      guidesActive = !guidesActive;
+      document.body.classList.toggle('edit-mode-active', guidesActive);
+      document.getElementById('btnGuideToggle').textContent = guidesActive ? "編集ガイドを隠す" : "編集ガイドを表示";
+    }
+
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.style.display = 'block';
+      setTimeout(() => { t.style.display = 'none'; }, 3000);
+    }
+
+    // --- VCard ダウンロード ---
+    function downloadVCard() {
+      const org = document.getElementById('inputVCardCompany').value;
+      const name = document.getElementById('inputVCardName').value;
+      const title = '営業部長'; // ダミーまたは必要に応じて追加
+      const tel = document.getElementById('inputVCardTel').value;
+      const mobile = document.getElementById('inputVCardMobile').value;
+      const fax = document.getElementById('inputVCardFax').value;
+      const email = document.getElementById('inputVCardEmail').value;
+      const address = document.getElementById('inputVCardAddr').value;
+      const pageUrl = window.location.href.split('?')[0]; 
+
+      const lines = [
+        'BEGIN:VCARD', 'VERSION:3.0',
+        `N:;${name};;;`, `FN:${name}`, `ORG:${org}`, `TITLE:${title}`,
+        `TEL;TYPE=WORK,VOICE:${tel.replace(/[^\d+()]/g, '')}`,
+        `TEL;TYPE=CELL,VOICE:${mobile.replace(/[^\d+()]/g, '')}`,
+        `TEL;TYPE=WORK,FAX:${fax.replace(/[^\d+()]/g, '')}`,
+        `EMAIL;TYPE=WORK:${email}`,
+        `ADR;TYPE=WORK:;;${address};;;;日本`,
+        `URL:${pageUrl}`,
+        'END:VCARD'
+      ];
+      
+      const vcfStr = lines.join('\r\n');
+      const bom = new Uint8Array([0xEF, 0xBB, 0xBF]);
+      const blob = new Blob([bom, vcfStr], { type: "text/vcard;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; 
+      a.download = `${org}_${name}.vcf`.replace(/\s/g, '');
+      document.body.appendChild(a); 
+      a.click(); 
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 3000);
+      showToast("✓ スマホの連絡先に保存しました");
+    }
 
     function syncStudioToView() {
-      const webUrl = document.getElementById('inputVCardWeb').value.trim();
-      const safeUrl = /^https?:\/\//i.test(webUrl) ? webUrl : 'https://' + webUrl;
+      // Input値の反映
+      const fImg = document.getElementById('inputFrontImgUrl').value.trim();
+      const bImg = document.getElementById('inputBackImgUrl').value.trim();
       
-      // QRとURL更新
-      document.getElementById('qrCode').src = "https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=" + encodeURIComponent(safeUrl);
-      let displayUrl = safeUrl.replace(/^https?:\/\//, '');
-      if(displayUrl.endsWith('/')) displayUrl = displayUrl.slice(0, -1);
-      document.getElementById('websiteText').textContent = displayUrl;
-      document.getElementById('linkWeb').href = safeUrl;
+      // 日本語ファイル名の文字化け・リンク切れ防止
+      if (fImg !== "") { document.getElementById('viewFrontImg').src = encodeURI(fImg); }
+      if (bImg !== "") { document.getElementById('viewBackImg').src = encodeURI(bImg); }
 
-      // リンク更新
+      document.getElementById('dispCompany').textContent = document.getElementById('inputVCardCompany').value;
+
+      // 座標の反映
+      const linkAddr = document.getElementById('linkAddr');
+      linkAddr.style.setProperty('--el-x', document.getElementById('coordAddrX').value);
+      linkAddr.style.setProperty('--el-y', document.getElementById('coordAddrY').value);
+      linkAddr.style.setProperty('--el-w', document.getElementById('coordAddrW').value);
+      linkAddr.style.setProperty('--el-h', document.getElementById('coordAddrH').value);
+
+      const linkTel = document.getElementById('linkTel');
+      linkTel.style.setProperty('--el-x', document.getElementById('coordTelX').value);
+      linkTel.style.setProperty('--el-y', document.getElementById('coordTelY').value);
+      linkTel.style.setProperty('--el-w', document.getElementById('coordTelW').value);
+      linkTel.style.setProperty('--el-h', document.getElementById('coordTelH').value);
+
+      const linkFax = document.getElementById('linkFax');
+      linkFax.style.setProperty('--el-x', document.getElementById('coordFaxX').value);
+      linkFax.style.setProperty('--el-y', document.getElementById('coordFaxY').value);
+      linkFax.style.setProperty('--el-w', document.getElementById('coordFaxW').value);
+      linkFax.style.setProperty('--el-h', document.getElementById('coordFaxH').value);
+
+      const linkMobile = document.getElementById('linkMobile');
+      linkMobile.style.setProperty('--el-x', document.getElementById('coordMobileX').value);
+      linkMobile.style.setProperty('--el-y', document.getElementById('coordMobileY').value);
+      linkMobile.style.setProperty('--el-w', document.getElementById('coordMobileW').value);
+      linkMobile.style.setProperty('--el-h', document.getElementById('coordMobileH').value);
+
+      const linkEmail = document.getElementById('linkEmail');
+      linkEmail.style.setProperty('--el-x', document.getElementById('coordEmailX').value);
+      linkEmail.style.setProperty('--el-y', document.getElementById('coordEmailY').value);
+      linkEmail.style.setProperty('--el-w', document.getElementById('coordEmailW').value);
+      linkEmail.style.setProperty('--el-h', document.getElementById('coordEmailH').value);
+
+      // Google Mapsリンクの正しい構文
+      const cleanAddress = document.getElementById('inputVCardAddr').value.replace(/〒?\d{3}-\d{4}\s*/, '');
+      linkAddr.href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(cleanAddress)}`;
+      
+      // 各種リンクの反映
       document.getElementById('linkTel').href = `tel:${document.getElementById('inputVCardTel').value.replace(/[^\d-]/g, '')}`;
+      document.getElementById('linkFax').href = `tel:${document.getElementById('inputVCardFax').value.replace(/[^\d-]/g, '')}`;
+      document.getElementById('linkMobile').href = `tel:${document.getElementById('inputVCardMobile').value.replace(/[^\d-]/g, '')}`;
       document.getElementById('linkEmail').href = `mailto:${document.getElementById('inputVCardEmail').value.trim()}`;
+
+      // 🌟究極の修正: QRコードとURLの反映、極限までコンパクトな横並び配置
+      const webUrl = document.getElementById('inputVCardWeb').value;
+      if(webUrl) {
+        // httpがない場合は補完してQR生成・リンクに使う（404エラー防止）
+        const safeUrl = /^https?:\/\//i.test(webUrl) ? webUrl : 'https://' + webUrl;
+        document.getElementById('qrCode').src = "https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=" + encodeURIComponent(safeUrl);
+        
+        // URL表示を極限までスッキリさせる (https:// と 末尾の / を削除)
+        let displayUrl = safeUrl.replace(/^https?:\/\//, '');
+        if(displayUrl.endsWith('/')) displayUrl = displayUrl.slice(0, -1);
+        document.getElementById('websiteText').textContent = displayUrl;
+        
+        const webBack = document.getElementById('linkWeb');
+        // 左下限界ギリギリのQR領域全体に被せる (X: 18, Y: 490付近)
+        webBack.style.setProperty('--el-x', 18);  
+        webBack.style.setProperty('--el-y', 490); 
+        webBack.style.setProperty('--el-w', 120); 
+        webBack.style.setProperty('--el-h', 45);  
+        webBack.href = safeUrl;
+        
+        document.getElementById('qrContainer').style.display = 'flex';
+        webBack.style.display = 'block';
+      } else {
+        document.getElementById('qrContainer').style.display = 'none';
+        document.getElementById('linkWeb').style.display = 'none';
+      }
+
+      // エフェクトの反映
+      const rootF = document.getElementById('cardFront');
+      const rootB = document.getElementById('cardBack');
+      const sweepShine = document.getElementById('toggleSweepShine').checked;
+      const borderSweep = document.getElementById('toggleBorderSweep').checked;
+      const embossFilter = document.getElementById('toggleEmboss').checked;
+
+      rootF.classList.toggle('has-sweep-shine', sweepShine);
+      rootB.classList.toggle('has-sweep-shine', sweepShine);
+      document.body.classList.toggle('has-border-sweep', borderSweep);
+      
+      // 🌟エンボス強調の反映
+      rootF.classList.toggle('has-emboss-filter', embossFilter);
     }
 
-    function toggleStudioPanel() { document.getElementById('studioPanel').classList.toggle('hidden'); document.getElementById('studioPanel').classList.toggle('flex'); }
+    function init() {
+      try {
+        const rawData = document.getElementById('gas-data').textContent.trim();
+        if (rawData) globalCardData = JSON.parse(rawData);
+      } catch(e) { console.warn("JSON Parse Error", e); }
 
-    function downloadVCard() {
-      const name = document.getElementById('inputVCardName') ? document.getElementById('inputVCardName').value : '野崎元宏';
-      const org = document.getElementById('inputVCardCompany').value;
-      const tel = document.getElementById('inputVCardTel').value;
-      const email = document.getElementById('inputVCardEmail').value;
-      const vcfStr = `BEGIN:VCARD\nVERSION:3.0\nFN:${name}\nORG:${org}\nTEL;TYPE=WORK,VOICE:${tel}\nEMAIL;TYPE=WORK:${email}\nEND:VCARD`;
-      const blob = new Blob([vcfStr], { type: "text/vcard" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a'); a.href = url; a.download = 'contact.vcf'; a.click();
+      const d = globalCardData;
+      if (Object.keys(d).length > 0) {
+        if(d.frontImg) document.getElementById('inputFrontImgUrl').value = d.frontImg;
+        if(d.backImg) document.getElementById('inputBackImgUrl').value = d.backImg;
+        if(d.companyName) document.getElementById('inputVCardCompany').value = d.companyName;
+        if(d.name) document.getElementById('inputVCardName').value = d.name;
+        if(d.address) document.getElementById('inputVCardAddr').value = d.address;
+        if(d.tel_main) document.getElementById('inputVCardTel').value = d.tel_main;
+        if(d.email) document.getElementById('inputVCardEmail').value = d.email;
+        if(d.website) document.getElementById('inputVCardWeb').value = d.website;
+        
+        if(d.coords && d.coords.a) {
+          document.getElementById('coordAddrX').value = d.coords.a.x;
+          document.getElementById('coordAddrY').value = d.coords.a.y;
+          document.getElementById('coordAddrW').value = d.coords.a.w;
+          document.getElementById('coordAddrH').value = d.coords.a.h;
+        }
+      }
+
+      // 初回同期を実行
+      syncStudioToView();
+
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('admin') === 'true') {
+        document.getElementById('btnStudioTrigger').classList.remove('hidden');
+      }
+
+      // 編集欄の変更を即座に反映
+      const inputs = document.querySelectorAll('#studioPanel input');
+      inputs.forEach(input => {
+        input.addEventListener('input', syncStudioToView);
+      });
     }
 
-    document.querySelectorAll('input').forEach(i => i.addEventListener('input', syncStudioToView));
-    if(new URLSearchParams(window.location.search).get('admin')==='true') document.getElementById('btnStudioTrigger').classList.remove('hidden');
-    window.onload = syncStudioToView;
+    window.onload = init;
   </script>
 </body>
 </html>
