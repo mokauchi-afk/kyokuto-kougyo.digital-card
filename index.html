@@ -43,18 +43,16 @@
       position: relative; width: 100%; max-width: 480px; aspect-ratio: 91/55; perspective: 2500px; z-index: 10; margin: 0 auto;
     }
 
-    /* 傾き(Tilt)専用の箱 */
     .card-tilt { 
       width: 100%; height: 100%; transform-style: preserve-3d; 
     }
 
-    /* 反転(Flip)専用の箱 */
     .card-container {
       width: 100%; height: 100%; transform-style: preserve-3d; transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1); position: relative; cursor: pointer; -webkit-tap-highlight-color: transparent;
     }
     .card-container.is-flipped { transform: rotateY(180deg); }
 
-    /* 3D面の基本設定 (スマホで消えるバグの完全防御) */
+    /* 3D面の基本設定 */
     .card-face {
       position: absolute; inset: 0; width: 100%; height: 100%;
       backface-visibility: hidden; -webkit-backface-visibility: hidden;
@@ -67,15 +65,12 @@
     .card-front { transform: rotateY(0deg) translateZ(1px); z-index: 2; }
     .card-back { transform: rotateY(180deg) translateZ(1px); z-index: 1; pointer-events: none; }
 
-    /* 🌟究極のエンボス強化：画像自体のコントラストと陰影をダイレクトに引き上げる */
+    /* 🌟 エンボス強調フィルター */
     .card-face-image {
       position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 2; pointer-events: none;
       transition: filter 0.3s ease;
     }
-    
-    /* スタジオの「エンボス」チェック時のみ適用される強力な浮き出しフィルター */
     .has-emboss-filter .card-face-image {
-      /* 枠の影ではなく、画像内の色差を強制的に強調してエンボスロゴをくっきりさせる */
       filter: contrast(1.4) brightness(0.92) saturate(1.1);
     }
 
@@ -86,14 +81,13 @@
       position: absolute;
       left: calc(var(--el-x, 0) / 910 * 100%); top: calc(var(--el-y, 0) / 550 * 100%);
       width: calc(var(--el-w, 100) / 910 * 100%); height: calc(var(--el-h, 50) / 550 * 100%);
-      z-index: 50; /* エフェクトよりも前面に出して確実にタップ可能にする */
+      z-index: 50; 
       border: 1px dashed rgba(206, 186, 140, 0.0); transition: border-color 0.2s ease, background-color 0.2s ease; 
       cursor: pointer; -webkit-tap-highlight-color: rgba(255,255,255,0.2);
-      pointer-events: auto; /* クリックを確実に検知 */
+      pointer-events: auto; 
     }
     .edit-mode-active .coord-target { border: 1px dashed rgba(206, 186, 140, 0.75) !important; background-color: rgba(206, 186, 140, 0.15) !important; }
 
-    /* 箔押しロゴエフェクト */
     .foil-logo {
       position: absolute; z-index: 20; pointer-events: none;
       filter: brightness(1.8) contrast(1.5) drop-shadow(0 0 8px gold) drop-shadow(0 2px 2px rgba(0,0,0,.6));
@@ -106,52 +100,51 @@
     }
 
     /* =========================================================================
-       👑 究極・完全なる被りゼロ: 【裏面】QRコード配置（文字被り回避・適正サイズ版）
+       🌟 究極の美：QRコードとURLの左下・被りゼロ・横並び配置 (絶対ピクセル指定版)
        ========================================================================= */
     .back-info {
       position: absolute; 
-      left: 3%; /* 限界すぎず、適度な左寄り */
-      bottom: 3%; /* 限界すぎず、適度な下寄り */
+      left: 3%;    
+      bottom: 3%;  
       z-index: 30;
-      color: #111; 
-      background: rgba(255, 255, 255, 0.85); /* すりガラス調 */
-      padding: 4px 6px; /* 余白を適度に戻す */
+      background: rgba(255, 255, 255, 0.85); 
+      padding: 4px 6px; 
       border-radius: 4px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-      backdrop-filter: blur(4px);
       display: flex; 
       flex-direction: row; 
       align-items: center; 
-      gap: 5px; 
-      pointer-events: none; /* タップ検知は .coord-target に任せる */
+      gap: 6px; 
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+      backdrop-filter: blur(2px);
+      pointer-events: none; 
     }
     .back-info img {
-      width: 30px; /* 見やすい元のサイズに戻す */
-      height: 30px;
+      width: 26px;  /* 物理的に極小サイズを指定 */
+      height: 26px; 
+      mix-blend-mode: multiply; 
       display: block;
-      mix-blend-mode: multiply;
     }
     .back-info-text {
       display: flex;
       flex-direction: column;
-      align-items: flex-start;
       justify-content: center;
     }
     .back-info-label {
-      font-size: 6px; 
+      font-size: 6px;
       font-weight: 800;
+      color: #555;
       letter-spacing: 0.05em;
-      color: #666;
-      font-family: 'Inter', sans-serif;
-      line-height: 1;
       margin-bottom: 1px;
+      line-height: 1;
+      font-family: 'Inter', sans-serif;
     }
     .back-info-url {
-      font-size: 8px; /* 視認性を確保できるサイズに戻す */
+      font-size: 8px;
       font-weight: 700;
-      font-family: 'Inter', sans-serif;
-      white-space: nowrap; /* 絶対に改行させない */
+      color: #111;
+      white-space: nowrap; 
       line-height: 1;
+      font-family: 'Inter', sans-serif;
     }
 
     /* =========================================================================
@@ -170,16 +163,14 @@
     .card-border-mask { position: absolute; inset: 2px; background: inherit; border-radius: inherit; z-index: 1; pointer-events: none; }
     .has-border-sweep .card-border-light-wrap { display: flex; }
 
-    /* トースト通知 */
     #toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #111; border: 1px solid #d4af37; color: #d4af37; padding: 12px 24px; border-radius: 30px; font-size: 13px; z-index: 9999; display: none; white-space: nowrap; box-shadow: 0 4px 12px rgba(0,0,0,0.5);}
 
-    /* Scrollbar for studio */
     .custom-scrollbar::-webkit-scrollbar { width: 6px; }
     .custom-scrollbar::-webkit-scrollbar-track { background: #110f0d; }
     .custom-scrollbar::-webkit-scrollbar-thumb { background: #33281e; border-radius: 3px; }
   </style>
 
-  <!-- 裏面画像の拡張子を "IMG_7546うら.jpg" で固定 -->
+  <!-- 初期データ設定 -->
   <script id="gas-data" type="application/json">
   {
     "id": "nozaki_m",
@@ -215,24 +206,18 @@
 </head>
 <body class="flex flex-col lg:flex-row items-stretch justify-start min-h-screen relative" id="mainBody">
 
-  <!-- =======================================================================
-       LEFT: MAIN VISUAL PREVIEW AREA
-       ======================================================================= -->
   <div class="flex-1 flex flex-col items-center justify-center p-6 md:p-12 space-y-8 relative">
     
+    <!-- 🌟 修正1: 会社名テキストを削除し、Paper-Faithful Digital Twin だけを残す -->
     <div class="text-center space-y-1">
       <span class="text-[9px] tracking-[0.35em] uppercase text-[#ceba8c] font-bold">Paper-Faithful Digital Twin</span>
-      <h2 id="dispCompany" class="text-md md:text-lg font-bold tracking-widest text-white font-sans">極東興業株式会社</h2>
     </div>
 
-    <!-- 3D Card Stage wrapper -->
     <div class="card-theater" id="cardStage">
-      <!-- 傾き(tilt)の箱 -->
       <div class="card-tilt" id="cardTilt">
-        <!-- 反転(flip)の箱 -->
         <div class="card-container" id="cardContainer">
           
-          <!-- FRONT FACE (表面) -->
+          <!-- FRONT FACE -->
           <div class="card-face card-front" id="cardFront">
             <div class="card-border-light-wrap" id="borderSweepWrap">
               <div class="card-border-light" id="borderSweepElement"></div>
@@ -242,22 +227,20 @@
             <div class="card-shine" id="shineFront"></div>
             <div class="card-sweep-light" id="sweepFront"></div>
             
-            <img id="viewFrontImg" src="IMG_7545.jpg" class="card-face-image" alt="名刺表面画像" onerror="this.src='https://placehold.jp/910x550.png?text=表面画像が見つかりません';">
+            <img id="viewFrontImg" src="IMG_7545.jpg" class="card-face-image" alt="名刺表面" onerror="this.src='https://placehold.jp/910x550.png?text=Image+Not+Found';">
 
-            <!-- 連絡先ホットスポット (Z-index:50で確実にタップ可能) -->
             <div class="card-inner-targets">
-              <a id="linkAddr" href="#" target="_blank" rel="noopener noreferrer" class="coord-target" style="--el-x: 320; --el-y: 380; --el-w: 520; --el-h: 40;" title="Googleマップで場所を表示"></a>
-              <a id="linkTel" href="#" class="coord-target" style="--el-x: 320; --el-y: 420; --el-w: 520; --el-h: 30;" title="電話を発信"></a>
-              <a id="linkFax" href="#" class="coord-target" style="--el-x: 320; --el-y: 450; --el-w: 520; --el-h: 30;" title="FAX"></a>
-              <a id="linkMobile" href="#" class="coord-target" style="--el-x: 320; --el-y: 470; --el-w: 520; --el-h: 30;" title="携帯電話を発信"></a>
-              <a id="linkEmail" href="#" class="coord-target" style="--el-x: 320; --el-y: 500; --el-w: 520; --el-h: 30;" title="メールを送信"></a>
-              
-              <!-- 箔押しロゴ -->
+              <!-- 住所（Google Map）へのリンク領域 -->
+              <a id="linkAddr" href="#" target="_blank" rel="noopener noreferrer" class="coord-target" style="--el-x: 320; --el-y: 380; --el-w: 520; --el-h: 40;" onclick="event.stopPropagation()"></a>
+              <a id="linkTel" href="#" class="coord-target" style="--el-x: 320; --el-y: 420; --el-w: 520; --el-h: 30;" onclick="event.stopPropagation()"></a>
+              <a id="linkFax" href="#" class="coord-target" style="--el-x: 320; --el-y: 450; --el-w: 520; --el-h: 30;" onclick="event.stopPropagation()"></a>
+              <a id="linkMobile" href="#" class="coord-target" style="--el-x: 320; --el-y: 470; --el-w: 520; --el-h: 30;" onclick="event.stopPropagation()"></a>
+              <a id="linkEmail" href="#" class="coord-target" style="--el-x: 320; --el-y: 500; --el-w: 520; --el-h: 30;" onclick="event.stopPropagation()"></a>
               <img id="logoFoil" src="logo.png" class="foil-logo" alt="ロゴ" style="--el-x: 50; --el-y: 50; --el-w: 100; --el-h: 100;" onerror="this.style.display='none';">
             </div>
           </div>
 
-          <!-- BACK FACE (裏面) -->
+          <!-- BACK FACE -->
           <div class="card-face card-back" id="cardBack">
             <div class="card-border-light-wrap" id="borderSweepWrapBack">
               <div class="card-border-light" id="borderSweepElementBack"></div>
@@ -267,9 +250,9 @@
             <div class="card-shine" id="shineBack"></div>
             <div class="card-sweep-light" id="sweepBack"></div>
             
-            <img id="viewBackImg" src="IMG_7546うら.jpg" class="card-face-image" alt="名刺裏面画像" onerror="this.src='https://placehold.jp/910x550.png?text=裏面画像が見つかりません';">
+            <img id="viewBackImg" src="IMG_7546うら.jpg" class="card-face-image" alt="名刺裏面" onerror="this.src='https://placehold.jp/910x550.png?text=Image+Not+Found';">
             
-            <!-- 🌟QRコードとURLを左下に配置（適正サイズ・横並び） -->
+            <!-- QRコードとURL -->
             <div class="back-info" id="qrContainer">
               <img id="qrCode" src="" alt="QR">
               <div class="back-info-text">
@@ -278,7 +261,7 @@
               </div>
             </div>
 
-            <!-- 🌟裏面のWEBサイトへのリンク領域（QR枠全体の上に被せる） -->
+            <!-- 裏面のWEBサイトへのリンク領域 -->
             <a id="linkWeb" href="#" target="_blank" rel="noopener" class="coord-target" onclick="event.stopPropagation()"></a>
           </div>
 
@@ -286,15 +269,14 @@
       </div>
     </div>
 
-    <!-- ── FIXED EXTERNAL CONTROL ACTIONS ── -->
+    <!-- アクションボタン -->
     <div class="w-full max-w-xs flex flex-col gap-3 pt-2">
-      <!-- フリップボタン -->
       <button id="btnFlipExternal" onclick="flipCardFromBtn()" class="w-full py-3 bg-[#171412] text-gray-300 border border-gray-800 rounded-lg font-sans text-xs flex items-center justify-center gap-2 hover:border-[#ceba8c] hover:text-[#ceba8c] transition active:scale-[0.97] duration-150 relative z-20">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
         <span id="btnFlipText">裏面を表示する（タップ回転）</span>
       </button>
 
-      <!-- vCardダウンロードボタン -->
+      <!-- 🌟 vCard保存ボタン -->
       <button onclick="downloadVCard()" class="w-full py-3.5 bg-gradient-to-r from-[#211a13] via-[#120e0a] to-[#211a13] text-[#ceba8c] border border-[#6b5842] rounded-lg font-serif tracking-[0.2em] text-xs flex items-center justify-center gap-2 shadow-xl hover:border-[#8e765a] hover:text-white transition active:scale-[0.97] duration-150 relative z-20">
         <svg width="14" height="14" viewBox="0 0 20 20" fill="none">
           <path d="M10 2v11M6 9l4 4 4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
@@ -303,20 +285,17 @@
         スマホの連絡先に保存する
       </button>
     </div>
-
   </div>
 
-  <!-- =======================================================================
-       RIGHT: REAL-TIME EDITING STUDIO (Admin secret panel)
-       ======================================================================= -->
+  <!-- スタジオ起動ボタン -->
   <button id="btnStudioTrigger" onclick="toggleStudioPanel()" class="fixed bottom-4 right-4 z-50 p-3.5 bg-[#1e1712]/95 text-[#ceba8c] border border-[#524131] rounded-full shadow-2xl hover:bg-[#30251c] active:scale-95 transition flex items-center justify-center hidden" title="秘密の編集スタジオ">
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
       <path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
     </svg>
   </button>
 
+  <!-- 編集スタジオパネル -->
   <div id="studioPanel" class="hidden w-full lg:w-[450px] bg-[#110f0d] border-l border-gray-800 p-6 md:p-8 flex-col justify-between overflow-y-auto max-h-screen custom-scrollbar z-40 relative">
-    
     <div class="space-y-6 font-sans">
       <div>
         <div class="flex items-center justify-between">
@@ -328,7 +307,6 @@
       </div>
 
       <div class="space-y-5 text-sm text-gray-300">
-        
         <h4 class="text-[11px] font-bold text-[#ceba8c] tracking-widest uppercase border-b border-[#2d2319] pb-0.5 pt-2">🖼️ 名刺画像の設定</h4>
         <div class="grid grid-cols-2 gap-3">
           <div>
@@ -351,7 +329,6 @@
             <span class="font-bold text-gray-300 text-[10px]">動く光る枠線</span>
             <input type="checkbox" id="toggleBorderSweep" class="w-4 h-4 rounded text-[#ceba8c]">
           </div>
-          <!-- 🌟追加：エンボス（浮き出し）強調オプション -->
           <div class="flex items-center justify-between col-span-2">
             <span class="font-bold text-gray-300 text-[10px]">ロゴ浮き出し強調（コントラスト/影）</span>
             <input type="checkbox" id="toggleEmboss" checked class="w-4 h-4 rounded text-[#ceba8c]">
@@ -375,8 +352,8 @@
               <div><label class="text-[8.5px] text-gray-500">H</label><input type="number" id="coordAddrH" value="40" class="w-full bg-[#2a2420] border border-gray-700 rounded p-1 text-center text-white"></div>
             </div>
             <div class="mt-1">
-              <label class="block text-[9px] text-gray-500">連動する住所テキスト</label>
-              <input type="text" id="inputVCardAddr" value="〒761-0312 高松市東山崎町347-7" class="w-full bg-[#2a2420] border border-gray-700 rounded px-2 py-1 text-[11px] text-white">
+              <label class="block text-[9px] text-gray-500">連動する住所テキスト (Google Maps検索用)</label>
+              <input type="text" id="inputVCardAddr" value="〒761-0312 香川県高松市東山崎町347-7" class="w-full bg-[#2a2420] border border-gray-700 rounded px-2 py-1 text-[11px] text-white">
             </div>
           </div>
 
@@ -390,7 +367,7 @@
             </div>
             <div class="mt-1">
               <label class="block text-[9px] text-gray-500">連動する代表電話</label>
-              <input type="text" id="inputVCardTel" value="(087) 847-6116(代)" class="w-full bg-[#2a2420] border border-gray-700 rounded px-2 py-1 text-[11px] text-white">
+              <input type="text" id="inputVCardTel" value="(087) 847-6116" class="w-full bg-[#2a2420] border border-gray-700 rounded px-2 py-1 text-[11px] text-white">
             </div>
           </div>
 
@@ -445,7 +422,7 @@
               </div>
               <div>
                 <label class="text-[9px] text-gray-500">氏名</label>
-                <input type="text" id="inputVCardName" value="野崎元宏" class="w-full bg-[#2a2420] border border-gray-700 rounded px-2 py-1 text-[11px] text-white">
+                <input type="text" id="inputVCardName" value="野﨑 元宏" class="w-full bg-[#2a2420] border border-gray-700 rounded px-2 py-1 text-[11px] text-white">
               </div>
               <div class="col-span-2">
                 <label class="text-[9px] text-gray-500">WEBサイトURL（裏面用）</label>
@@ -474,11 +451,8 @@
     function runCardAnimationLoop() {
       currentX += (targetX - currentX) * 0.1;
       currentY += (targetY - currentY) * 0.1;
-
       const rotX = -currentY * 11;
       const rotY = currentX * 11;
-      
-      // 傾きは cardTilt に適用
       cardTilt.style.transform = `rotateX(${rotX}deg) rotateY(${rotY}deg)`;
       requestAnimationFrame(runCardAnimationLoop);
     }
@@ -492,14 +466,12 @@
     });
     document.addEventListener('mouseleave', function() { targetX = 0; targetY = 0; });
 
-    // --- 3Dフリップ時のチラつき・非表示防御 ---
+    // --- Flip Animation ---
     let isFlipped = false;
     let isFlippingNow = false;
     
     function flipCard(e) {
-      // リンク(aタグ)がタップされた場合は裏返さない
       if (e && e.target && e.target.tagName.toLowerCase() === 'a') return; 
-      
       if (isFlippingNow) return;
       isFlippingNow = true;
       isFlipped = !isFlipped;
@@ -511,7 +483,6 @@
       const back = document.getElementById('cardBack');
 
       setTimeout(() => {
-        // pointer-events だけを切り替え、visibility: hidden の悪さを防ぐ
         if (isFlipped) {
           front.style.pointerEvents = 'none';
           back.style.pointerEvents = 'auto'; 
@@ -525,11 +496,10 @@
         isFlippingNow = false;
       }, 600);
     }
-
-    function flipCardFromBtn() { flipCard(null); }
     cardContainer.addEventListener('click', flipCard);
+    function flipCardFromBtn() { flipCard(null); }
 
-    // --- Studio Toggle ---
+    // --- Studio Controls ---
     function toggleStudioPanel() {
       const panel = document.getElementById('studioPanel');
       panel.classList.toggle('hidden');
@@ -550,11 +520,11 @@
       setTimeout(() => { t.style.display = 'none'; }, 3000);
     }
 
-    // --- VCard ダウンロード ---
+    // --- 🌟 vCard (連絡先保存) 完全ロジック ---
     function downloadVCard() {
       const org = document.getElementById('inputVCardCompany').value;
       const name = document.getElementById('inputVCardName').value;
-      const title = '営業部長'; // ダミーまたは必要に応じて追加
+      const title = '営業部長'; 
       const tel = document.getElementById('inputVCardTel').value;
       const mobile = document.getElementById('inputVCardMobile').value;
       const fax = document.getElementById('inputVCardFax').value;
@@ -588,75 +558,53 @@
       showToast("✓ スマホの連絡先に保存しました");
     }
 
+    // --- 🌟 リンク同期・エフェクト処理 ---
     function syncStudioToView() {
-      // Input値の反映
       const fImg = document.getElementById('inputFrontImgUrl').value.trim();
       const bImg = document.getElementById('inputBackImgUrl').value.trim();
-      
-      // 日本語ファイル名の文字化け・リンク切れ防止
       if (fImg !== "") { document.getElementById('viewFrontImg').src = encodeURI(fImg); }
       if (bImg !== "") { document.getElementById('viewBackImg').src = encodeURI(bImg); }
 
-      document.getElementById('dispCompany').textContent = document.getElementById('inputVCardCompany').value;
-
-      // 座標の反映
+      // 住所ホットスポットの座標反映
       const linkAddr = document.getElementById('linkAddr');
       linkAddr.style.setProperty('--el-x', document.getElementById('coordAddrX').value);
       linkAddr.style.setProperty('--el-y', document.getElementById('coordAddrY').value);
       linkAddr.style.setProperty('--el-w', document.getElementById('coordAddrW').value);
       linkAddr.style.setProperty('--el-h', document.getElementById('coordAddrH').value);
 
-      const linkTel = document.getElementById('linkTel');
-      linkTel.style.setProperty('--el-x', document.getElementById('coordTelX').value);
-      linkTel.style.setProperty('--el-y', document.getElementById('coordTelY').value);
-      linkTel.style.setProperty('--el-w', document.getElementById('coordTelW').value);
-      linkTel.style.setProperty('--el-h', document.getElementById('coordTelH').value);
+      // 他のホットスポットの座標反映
+      ['Tel', 'Fax', 'Mobile', 'Email'].forEach(type => {
+        const el = document.getElementById(`link${type}`);
+        el.style.setProperty('--el-x', document.getElementById(`coord${type}X`).value);
+        el.style.setProperty('--el-y', document.getElementById(`coord${type}Y`).value);
+        el.style.setProperty('--el-w', document.getElementById(`coord${type}W`).value);
+        el.style.setProperty('--el-h', document.getElementById(`coord${type}H`).value);
+      });
 
-      const linkFax = document.getElementById('linkFax');
-      linkFax.style.setProperty('--el-x', document.getElementById('coordFaxX').value);
-      linkFax.style.setProperty('--el-y', document.getElementById('coordFaxY').value);
-      linkFax.style.setProperty('--el-w', document.getElementById('coordFaxW').value);
-      linkFax.style.setProperty('--el-h', document.getElementById('coordFaxH').value);
-
-      const linkMobile = document.getElementById('linkMobile');
-      linkMobile.style.setProperty('--el-x', document.getElementById('coordMobileX').value);
-      linkMobile.style.setProperty('--el-y', document.getElementById('coordMobileY').value);
-      linkMobile.style.setProperty('--el-w', document.getElementById('coordMobileW').value);
-      linkMobile.style.setProperty('--el-h', document.getElementById('coordMobileH').value);
-
-      const linkEmail = document.getElementById('linkEmail');
-      linkEmail.style.setProperty('--el-x', document.getElementById('coordEmailX').value);
-      linkEmail.style.setProperty('--el-y', document.getElementById('coordEmailY').value);
-      linkEmail.style.setProperty('--el-w', document.getElementById('coordEmailW').value);
-      linkEmail.style.setProperty('--el-h', document.getElementById('coordEmailH').value);
-
-      // Google Mapsリンクの正しい構文
-      const cleanAddress = document.getElementById('inputVCardAddr').value.replace(/〒?\d{3}-\d{4}\s*/, '');
-      linkAddr.href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(cleanAddress)}`;
+      // 🌟 Google Maps リンクの完全生成 (郵便番号を除去して検索クエリ化)
+      const rawAddress = document.getElementById('inputVCardAddr').value;
+      const cleanAddress = rawAddress.replace(/〒?\d{3}-\d{4}\s*/, '').trim();
+      linkAddr.href = cleanAddress ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(cleanAddress)}` : '#';
       
-      // 各種リンクの反映
       document.getElementById('linkTel').href = `tel:${document.getElementById('inputVCardTel').value.replace(/[^\d-]/g, '')}`;
       document.getElementById('linkFax').href = `tel:${document.getElementById('inputVCardFax').value.replace(/[^\d-]/g, '')}`;
       document.getElementById('linkMobile').href = `tel:${document.getElementById('inputVCardMobile').value.replace(/[^\d-]/g, '')}`;
       document.getElementById('linkEmail').href = `mailto:${document.getElementById('inputVCardEmail').value.trim()}`;
 
-      // 🌟究極の修正: QRコードとURLの反映、適正サイズな横並び配置
+      // 裏面QRとURL
       const webUrl = document.getElementById('inputVCardWeb').value;
       if(webUrl) {
-        // httpがない場合は補完してQR生成・リンクに使う（404エラー防止）
         const safeUrl = /^https?:\/\//i.test(webUrl) ? webUrl : 'https://' + webUrl;
         document.getElementById('qrCode').src = "https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=" + encodeURIComponent(safeUrl);
         
-        // URL表示を極限までスッキリさせる (https:// と 末尾の / を削除)
         let displayUrl = safeUrl.replace(/^https?:\/\//, '');
         if(displayUrl.endsWith('/')) displayUrl = displayUrl.slice(0, -1);
         document.getElementById('websiteText').textContent = displayUrl;
         
         const webBack = document.getElementById('linkWeb');
-        // 左下のQR領域全体に被せる
-        webBack.style.setProperty('--el-x', 20);  
-        webBack.style.setProperty('--el-y', 480); 
-        webBack.style.setProperty('--el-w', 160); 
+        webBack.style.setProperty('--el-x', 15);  
+        webBack.style.setProperty('--el-y', 470); 
+        webBack.style.setProperty('--el-w', 150); 
         webBack.style.setProperty('--el-h', 50);  
         webBack.href = safeUrl;
         
@@ -678,7 +626,7 @@
       rootB.classList.toggle('has-sweep-shine', sweepShine);
       document.body.classList.toggle('has-border-sweep', borderSweep);
       
-      // 🌟エンボス強調の反映
+      // 🌟 エンボス（浮き出し）強調フィルターの適用
       rootF.classList.toggle('has-emboss-filter', embossFilter);
     }
 
@@ -688,25 +636,6 @@
         if (rawData) globalCardData = JSON.parse(rawData);
       } catch(e) { console.warn("JSON Parse Error", e); }
 
-      const d = globalCardData;
-      if (Object.keys(d).length > 0) {
-        if(d.frontImg) document.getElementById('inputFrontImgUrl').value = d.frontImg;
-        if(d.backImg) document.getElementById('inputBackImgUrl').value = d.backImg;
-        if(d.companyName) document.getElementById('inputVCardCompany').value = d.companyName;
-        if(d.name) document.getElementById('inputVCardName').value = d.name;
-        if(d.address) document.getElementById('inputVCardAddr').value = d.address;
-        if(d.tel_main) document.getElementById('inputVCardTel').value = d.tel_main;
-        if(d.email) document.getElementById('inputVCardEmail').value = d.email;
-        if(d.website) document.getElementById('inputVCardWeb').value = d.website;
-        
-        if(d.coords && d.coords.a) {
-          document.getElementById('coordAddrX').value = d.coords.a.x;
-          document.getElementById('coordAddrY').value = d.coords.a.y;
-          document.getElementById('coordAddrW').value = d.coords.a.w;
-          document.getElementById('coordAddrH').value = d.coords.a.h;
-        }
-      }
-
       // 初回同期を実行
       syncStudioToView();
 
@@ -715,7 +644,6 @@
         document.getElementById('btnStudioTrigger').classList.remove('hidden');
       }
 
-      // 編集欄の変更を即座に反映
       const inputs = document.querySelectorAll('#studioPanel input');
       inputs.forEach(input => {
         input.addEventListener('input', syncStudioToView);
