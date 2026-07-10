@@ -536,22 +536,19 @@
       ];
       
       const vcfStr = lines.join('\r\n');
+      // BOMを付与して文字化け防止
       const bom = new Uint8Array([0xEF, 0xBB, 0xBF]);
+      // Blobを生成
       const blob = new Blob([bom, vcfStr], { type: "text/vcard;charset=utf-8" });
-      
-      // ダウンロードリンクの作成とクリック
       const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url; 
-      // ファイル名を会社名と氏名で設定し、スペースを削除
-      a.download = `${org}_${name}.vcf`.replace(/\s/g, '');
-      document.body.appendChild(a); 
-      a.click(); 
-      document.body.removeChild(a);
       
-      // リソースの解放と完了トーストの表示
-      setTimeout(() => URL.revokeObjectURL(url), 3000);
-      showToast("✓ スマホの連絡先に保存しました");
+      // 🌟修正：a.download による強制保存をやめ、別タブ（別ウィンドウ）で開かせる
+      // これにより、iOS/AndroidのOS標準機能が連絡先ファイルとして認識し、電話帳アプリへ渡す画面が出ます。
+      window.open(url, '_blank');
+      
+      // 数秒後にメモリを解放
+      setTimeout(() => URL.revokeObjectURL(url), 5000);
+      showToast("連絡先データを表示しました。スマホに保存してください。");
     }
 
     function syncStudioToView() {
