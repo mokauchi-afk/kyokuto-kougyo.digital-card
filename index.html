@@ -9,6 +9,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@300;400;500;700;900&family=Shippori+Mincho:wght@400;500;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Font Awesomeの読み込みを追加 -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
   <style>
     :root { --effect-color: #d4af37; }
@@ -255,12 +257,10 @@
         <span id="btnFlipText">裏面を表示する（タップ回転）</span>
       </button>
 
+      <!-- 👑 vCard保存ボタンの表現修正と機能強化 -->
       <button onclick="downloadVCard()" class="w-full py-3.5 bg-gradient-to-r from-[#211a13] via-[#120e0a] to-[#211a13] text-[#ceba8c] border border-[#6b5842] rounded-lg font-serif tracking-[0.2em] text-xs flex items-center justify-center gap-2 shadow-xl hover:border-[#8e765a] hover:text-white transition active:scale-[0.97] duration-150 relative z-20">
-        <svg width="14" height="14" viewBox="0 0 20 20" fill="none">
-          <path d="M10 2v11M6 9l4 4 4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-          <path d="M3 16h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-        </svg>
-        スマホの連絡先に保存する
+        <i class="fa-solid fa-address-card"></i>
+        連絡先保存
       </button>
     </div>
   </div>
@@ -520,6 +520,7 @@
       const companyHp = document.getElementById('inputWebsite').value;
       const mapUrl = document.getElementById('inputMapUrl').value || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address.replace(/〒?\d{3}-\d{4}\s*/, '').trim())}`;
 
+      // vCardデータの生成（UTF-8 BOM付き）
       const lines = [
         'BEGIN:VCARD', 'VERSION:3.0',
         `N:;${name};;;`, `FN:${name}`, `ORG:${org}`, `TITLE:${title}`,
@@ -537,13 +538,18 @@
       const vcfStr = lines.join('\r\n');
       const bom = new Uint8Array([0xEF, 0xBB, 0xBF]);
       const blob = new Blob([bom, vcfStr], { type: "text/vcard;charset=utf-8" });
+      
+      // ダウンロードリンクの作成とクリック
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url; 
+      // ファイル名を会社名と氏名で設定し、スペースを削除
       a.download = `${org}_${name}.vcf`.replace(/\s/g, '');
       document.body.appendChild(a); 
       a.click(); 
       document.body.removeChild(a);
+      
+      // リソースの解放と完了トーストの表示
       setTimeout(() => URL.revokeObjectURL(url), 3000);
       showToast("✓ スマホの連絡先に保存しました");
     }
