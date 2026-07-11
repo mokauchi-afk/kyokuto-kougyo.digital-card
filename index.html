@@ -9,6 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@300;400;500;700;900&family=Shippori+Mincho:wght@400;500;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Font Awesomeの読み込み -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
   <style>
@@ -76,7 +77,7 @@
     }
     .edit-mode-active .coord-target { border: 1px dashed rgba(206, 186, 140, 0.75) !important; background-color: rgba(206, 186, 140, 0.15) !important; }
 
-    /* ロゴ画像の浮き出しエンボス表現 */
+    /* 👑ロゴ画像のオーバーレイ・浮き出しエンボス表現（物理的に浮かせる） */
     .foil-logo {
       position: absolute; 
       left: calc(var(--el-x, 0) * 1%); top: calc(var(--el-y, 0) * 1%);
@@ -87,7 +88,7 @@
     }
     .edit-mode-active .foil-logo { border: 1px dashed #d4af37; }
 
-    /* 裏面QRコード */
+    /* 👑裏面QRコード：文字被りを防ぐ絶対左下・極小・横並び配置 */
     .back-info {
       position: absolute; 
       left: 2%; bottom: 2%;  
@@ -165,6 +166,7 @@
 
   <div class="flex-1 flex flex-col items-center justify-center p-6 md:p-12 space-y-8 relative">
     
+    <!-- 洗練されたラベルのみ表示 -->
     <div class="text-center space-y-1">
       <span class="text-[9px] tracking-[0.35em] uppercase text-[#ceba8c] font-bold">Paper-Faithful Digital Twin</span>
     </div>
@@ -261,16 +263,34 @@
       <div class="space-y-5 text-sm text-gray-300">
         <h4 class="text-[11px] font-bold text-[#ceba8c] tracking-widest uppercase border-b border-[#2d2319] pb-0.5 pt-2">🖼️ 名刺画像の設定</h4>
         <div class="grid grid-cols-2 gap-3">
-          <div><label class="block text-[10px] font-semibold text-gray-400 mb-1">表面画像URL</label><input type="text" id="inputFrontImgUrl" class="w-full bg-[#1b1714] border border-gray-700 rounded px-3 py-2 text-xs text-white"></div>
-          <div><label class="block text-[10px] font-semibold text-gray-400 mb-1">裏面画像URL</label><input type="text" id="inputBackImgUrl" class="w-full bg-[#1b1714] border border-gray-700 rounded px-3 py-2 text-xs text-white"></div>
-          <div class="col-span-2"><label class="block text-[10px] font-semibold text-gray-400 mb-1">ロゴ画像URL</label><input type="text" id="inputLogoImgUrl" class="w-full bg-[#1b1714] border border-gray-700 rounded px-3 py-2 text-xs text-white"></div>
+          <div>
+            <label class="block text-[10px] font-semibold text-gray-400 mb-1">表面画像URL</label>
+            <input type="text" id="inputFrontImgUrl" class="w-full bg-[#1b1714] border border-gray-700 rounded px-3 py-2 text-xs text-white">
+          </div>
+          <div>
+            <label class="block text-[10px] font-semibold text-gray-400 mb-1">裏面画像URL</label>
+            <input type="text" id="inputBackImgUrl" class="w-full bg-[#1b1714] border border-gray-700 rounded px-3 py-2 text-xs text-white">
+          </div>
+          <div class="col-span-2">
+            <label class="block text-[10px] font-semibold text-gray-400 mb-1">ロゴ画像URL</label>
+            <input type="text" id="inputLogoImgUrl" class="w-full bg-[#1b1714] border border-gray-700 rounded px-3 py-2 text-xs text-white">
+          </div>
         </div>
 
         <h4 class="text-[11px] font-bold text-[#ceba8c] tracking-widest uppercase border-b border-[#2d2319] pb-0.5 pt-2">🎨 エフェクトセレクト</h4>
         <div class="grid grid-cols-2 gap-3">
-          <div class="flex items-center justify-between"><span class="font-bold text-gray-300 text-[10px]">キラッと光線</span><input type="checkbox" id="toggleSweepShine" class="w-4 h-4 rounded text-[#ceba8c]"></div>
-          <div class="flex items-center justify-between"><span class="font-bold text-gray-300 text-[10px]">動く光る枠線</span><input type="checkbox" id="toggleBorderSweep" class="w-4 h-4 rounded text-[#ceba8c]"></div>
-          <div class="flex items-center justify-between col-span-2"><span class="font-bold text-gray-300 text-[10px]">画像全体のコントラスト強調</span><input type="checkbox" id="toggleEmboss" class="w-4 h-4 rounded text-[#ceba8c]"></div>
+          <div class="flex items-center justify-between">
+            <span class="font-bold text-gray-300 text-[10px]">キラッと光線</span>
+            <input type="checkbox" id="toggleSweepShine" class="w-4 h-4 rounded text-[#ceba8c]">
+          </div>
+          <div class="flex items-center justify-between">
+            <span class="font-bold text-gray-300 text-[10px]">動く光る枠線</span>
+            <input type="checkbox" id="toggleBorderSweep" class="w-4 h-4 rounded text-[#ceba8c]">
+          </div>
+          <div class="flex items-center justify-between col-span-2">
+            <span class="font-bold text-gray-300 text-[10px]">画像全体のコントラスト強調</span>
+            <input type="checkbox" id="toggleEmboss" class="w-4 h-4 rounded text-[#ceba8c]">
+          </div>
         </div>
 
         <h4 class="text-[11px] font-bold text-[#ceba8c] tracking-widest uppercase border-b border-[#2d2319] pb-0.5 pt-2">📐 タップ領域の微調整</h4>
@@ -280,12 +300,74 @@
         </div>
 
         <div class="p-4 bg-[#181411] border border-gray-800 rounded-xl space-y-4 text-xs font-sans">
-          <div class="space-y-2 border-b border-gray-800/60 pb-3"><span class="font-bold text-gray-300 block">① 住所（a）</span><div class="grid grid-cols-4 gap-2"><div><label class="text-[8.5px] text-gray-500">X</label><input type="number" id="coordAddrX" step="0.1" class="w-full bg-[#2a2420] border border-gray-700 rounded p-1 text-center text-white"></div><div><label class="text-[8.5px] text-gray-500">Y</label><input type="number" id="coordAddrY" step="0.1" class="w-full bg-[#2a2420] border border-gray-700 rounded p-1 text-center text-white"></div><div><label class="text-[8.5px] text-gray-500">W</label><input type="number" id="coordAddrW" step="0.1" class="w-full bg-[#2a2420] border border-gray-700 rounded p-1 text-center text-white"></div><div><label class="text-[8.5px] text-gray-500">H</label><input type="number" id="coordAddrH" step="0.1" class="w-full bg-[#2a2420] border border-gray-700 rounded p-1 text-center text-white"></div></div><div class="mt-1 space-y-2"><div><label class="block text-[9px] text-gray-500">連動テキスト</label><input type="text" id="inputAddrText" class="w-full bg-[#2a2420] border border-gray-700 rounded px-2 py-1 text-[11px] text-white"></div><div><label class="block text-[9px] text-gray-500">Map URL</label><input type="text" id="inputMapUrl" class="w-full bg-[#2a2420] border border-gray-700 rounded px-2 py-1 text-[11px] text-white"></div></div></div>
-          <div class="space-y-2 border-b border-gray-800/60 pb-3"><span class="font-bold text-gray-300 block">② 代表電話（t1）</span><div class="grid grid-cols-4 gap-2"><div><label class="text-[8.5px] text-gray-500">X</label><input type="number" id="coordTelMainX" step="0.1" class="w-full bg-[#2a2420] border border-gray-700 rounded p-1 text-center text-white"></div><div><label class="text-[8.5px] text-gray-500">Y</label><input type="number" id="coordTelMainY" step="0.1" class="w-full bg-[#2a2420] border border-gray-700 rounded p-1 text-center text-white"></div><div><label class="text-[8.5px] text-gray-500">W</label><input type="number" id="coordTelMainW" step="0.1" class="w-full bg-[#2a2420] border border-gray-700 rounded p-1 text-center text-white"></div><div><label class="text-[8.5px] text-gray-500">H</label><input type="number" id="coordTelMainH" step="0.1" class="w-full bg-[#2a2420] border border-gray-700 rounded p-1 text-center text-white"></div></div><div class="mt-1"><input type="text" id="inputTelMain" class="w-full bg-[#2a2420] border border-gray-700 rounded px-2 py-1 text-[11px] text-white"></div></div>
-          <div class="space-y-2 border-b border-gray-800/60 pb-3"><span class="font-bold text-gray-300 block">③ FAX番号（f）</span><div class="grid grid-cols-4 gap-2"><div><label class="text-[8.5px] text-gray-500">X</label><input type="number" id="coordFaxX" step="0.1" class="w-full bg-[#2a2420] border border-gray-700 rounded p-1 text-center text-white"></div><div><label class="text-[8.5px] text-gray-500">Y</label><input type="number" id="coordFaxY" step="0.1" class="w-full bg-[#2a2420] border border-gray-700 rounded p-1 text-center text-white"></div><div><label class="text-[8.5px] text-gray-500">W</label><input type="number" id="coordFaxW" step="0.1" class="w-full bg-[#2a2420] border border-gray-700 rounded p-1 text-center text-white"></div><div><label class="text-[8.5px] text-gray-500">H</label><input type="number" id="coordFaxH" step="0.1" class="w-full bg-[#2a2420] border border-gray-700 rounded p-1 text-center text-white"></div></div><div class="mt-1"><input type="text" id="inputFax" class="w-full bg-[#2a2420] border border-gray-700 rounded px-2 py-1 text-[11px] text-white"></div></div>
-          <div class="space-y-2 border-b border-gray-800/60 pb-3"><span class="font-bold text-gray-300 block">④ 携帯電話（t2）</span><div class="grid grid-cols-4 gap-2"><div><label class="text-[8.5px] text-gray-500">X</label><input type="number" id="coordTelMobileX" step="0.1" class="w-full bg-[#2a2420] border border-gray-700 rounded p-1 text-center text-white"></div><div><label class="text-[8.5px] text-gray-500">Y</label><input type="number" id="coordTelMobileY" step="0.1" class="w-full bg-[#2a2420] border border-gray-700 rounded p-1 text-center text-white"></div><div><label class="text-[8.5px] text-gray-500">W</label><input type="number" id="coordTelMobileW" step="0.1" class="w-full bg-[#2a2420] border border-gray-700 rounded p-1 text-center text-white"></div><div><label class="text-[8.5px] text-gray-500">H</label><input type="number" id="coordTelMobileH" step="0.1" class="w-full bg-[#2a2420] border border-gray-700 rounded p-1 text-center text-white"></div></div><div class="mt-1"><input type="text" id="inputTelMobile" class="w-full bg-[#2a2420] border border-gray-700 rounded px-2 py-1 text-[11px] text-white"></div></div>
-          <div class="space-y-2 border-b border-gray-800/60 pb-3"><span class="font-bold text-gray-300 block">⑤ E-mail（e）</span><div class="grid grid-cols-4 gap-2"><div><label class="text-[8.5px] text-gray-500">X</label><input type="number" id="coordEmailX" step="0.1" class="w-full bg-[#2a2420] border border-gray-700 rounded p-1 text-center text-white"></div><div><label class="text-[8.5px] text-gray-500">Y</label><input type="number" id="coordEmailY" step="0.1" class="w-full bg-[#2a2420] border border-gray-700 rounded p-1 text-center text-white"></div><div><label class="text-[8.5px] text-gray-500">W</label><input type="number" id="coordEmailW" step="0.1" class="w-full bg-[#2a2420] border border-gray-700 rounded p-1 text-center text-white"></div><div><label class="text-[8.5px] text-gray-500">H</label><input type="number" id="coordEmailH" step="0.1" class="w-full bg-[#2a2420] border border-gray-700 rounded p-1 text-center text-white"></div></div><div class="mt-1"><input type="text" id="inputEmail" class="w-full bg-[#2a2420] border border-gray-700 rounded px-2 py-1 text-[11px] text-white"></div></div>
-          <div class="space-y-2 border-b border-gray-800/60 pb-3"><span class="font-bold text-gray-300 block">⑥ ロゴ位置（logo）</span><div class="grid grid-cols-4 gap-2"><div><label class="text-[8.5px] text-gray-500">X</label><input type="number" id="coordLogoX" step="0.1" class="w-full bg-[#2a2420] border border-gray-700 rounded p-1 text-center text-white"></div><div><label class="text-[8.5px] text-gray-500">Y</label><input type="number" id="coordLogoY" step="0.1" class="w-full bg-[#2a2420] border border-gray-700 rounded p-1 text-center text-white"></div><div><label class="text-[8.5px] text-gray-500">W</label><input type="number" id="coordLogoW" step="0.1" class="w-full bg-[#2a2420] border border-gray-700 rounded p-1 text-center text-white"></div><div><label class="text-[8.5px] text-gray-500">H</label><input type="number" id="coordLogoH" step="0.1" class="w-full bg-[#2a2420] border border-gray-700 rounded p-1 text-center text-white"></div></div></div>
+          
+          <div class="space-y-2 border-b border-gray-800/60 pb-3">
+            <span class="font-bold text-gray-300 block">① 住所（a）</span>
+            <div class="grid grid-cols-4 gap-2">
+              <div><label class="text-[8.5px] text-gray-500">X</label><input type="number" id="coordAddrX" step="0.1" class="w-full bg-[#2a2420] border border-gray-700 rounded p-1 text-center text-white"></div>
+              <div><label class="text-[8.5px] text-gray-500">Y</label><input type="number" id="coordAddrY" step="0.1" class="w-full bg-[#2a2420] border border-gray-700 rounded p-1 text-center text-white"></div>
+              <div><label class="text-[8.5px] text-gray-500">W</label><input type="number" id="coordAddrW" step="0.1" class="w-full bg-[#2a2420] border border-gray-700 rounded p-1 text-center text-white"></div>
+              <div><label class="text-[8.5px] text-gray-500">H</label><input type="number" id="coordAddrH" step="0.1" class="w-full bg-[#2a2420] border border-gray-700 rounded p-1 text-center text-white"></div>
+            </div>
+            <div class="mt-1 space-y-2">
+              <div><label class="block text-[9px] text-gray-500">連動テキスト</label><input type="text" id="inputAddrText" class="w-full bg-[#2a2420] border border-gray-700 rounded px-2 py-1 text-[11px] text-white"></div>
+              <div><label class="block text-[9px] text-gray-500">Map URL</label><input type="text" id="inputMapUrl" class="w-full bg-[#2a2420] border border-gray-700 rounded px-2 py-1 text-[11px] text-white"></div>
+            </div>
+          </div>
+
+          <div class="space-y-2 border-b border-gray-800/60 pb-3">
+            <span class="font-bold text-gray-300 block">② 代表電話（t1）</span>
+            <div class="grid grid-cols-4 gap-2">
+              <div><label class="text-[8.5px] text-gray-500">X</label><input type="number" id="coordTelMainX" step="0.1" class="w-full bg-[#2a2420] border border-gray-700 rounded p-1 text-center text-white"></div>
+              <div><label class="text-[8.5px] text-gray-500">Y</label><input type="number" id="coordTelMainY" step="0.1" class="w-full bg-[#2a2420] border border-gray-700 rounded p-1 text-center text-white"></div>
+              <div><label class="text-[8.5px] text-gray-500">W</label><input type="number" id="coordTelMainW" step="0.1" class="w-full bg-[#2a2420] border border-gray-700 rounded p-1 text-center text-white"></div>
+              <div><label class="text-[8.5px] text-gray-500">H</label><input type="number" id="coordTelMainH" step="0.1" class="w-full bg-[#2a2420] border border-gray-700 rounded p-1 text-center text-white"></div>
+            </div>
+            <div class="mt-1"><input type="text" id="inputTelMain" class="w-full bg-[#2a2420] border border-gray-700 rounded px-2 py-1 text-[11px] text-white"></div>
+          </div>
+
+          <div class="space-y-2 border-b border-gray-800/60 pb-3">
+            <span class="font-bold text-gray-300 block">③ FAX番号（f）</span>
+            <div class="grid grid-cols-4 gap-2">
+              <div><label class="text-[8.5px] text-gray-500">X</label><input type="number" id="coordFaxX" step="0.1" class="w-full bg-[#2a2420] border border-gray-700 rounded p-1 text-center text-white"></div>
+              <div><label class="text-[8.5px] text-gray-500">Y</label><input type="number" id="coordFaxY" step="0.1" class="w-full bg-[#2a2420] border border-gray-700 rounded p-1 text-center text-white"></div>
+              <div><label class="text-[8.5px] text-gray-500">W</label><input type="number" id="coordFaxW" step="0.1" class="w-full bg-[#2a2420] border border-gray-700 rounded p-1 text-center text-white"></div>
+              <div><label class="text-[8.5px] text-gray-500">H</label><input type="number" id="coordFaxH" step="0.1" class="w-full bg-[#2a2420] border border-gray-700 rounded p-1 text-center text-white"></div>
+            </div>
+            <div class="mt-1"><input type="text" id="inputFax" class="w-full bg-[#2a2420] border border-gray-700 rounded px-2 py-1 text-[11px] text-white"></div>
+          </div>
+
+          <div class="space-y-2 border-b border-gray-800/60 pb-3">
+            <span class="font-bold text-gray-300 block">④ 携帯電話（t2）</span>
+            <div class="grid grid-cols-4 gap-2">
+              <div><label class="text-[8.5px] text-gray-500">X</label><input type="number" id="coordTelMobileX" step="0.1" class="w-full bg-[#2a2420] border border-gray-700 rounded p-1 text-center text-white"></div>
+              <div><label class="text-[8.5px] text-gray-500">Y</label><input type="number" id="coordTelMobileY" step="0.1" class="w-full bg-[#2a2420] border border-gray-700 rounded p-1 text-center text-white"></div>
+              <div><label class="text-[8.5px] text-gray-500">W</label><input type="number" id="coordTelMobileW" step="0.1" class="w-full bg-[#2a2420] border border-gray-700 rounded p-1 text-center text-white"></div>
+              <div><label class="text-[8.5px] text-gray-500">H</label><input type="number" id="coordTelMobileH" step="0.1" class="w-full bg-[#2a2420] border border-gray-700 rounded p-1 text-center text-white"></div>
+            </div>
+            <div class="mt-1"><input type="text" id="inputTelMobile" class="w-full bg-[#2a2420] border border-gray-700 rounded px-2 py-1 text-[11px] text-white"></div>
+          </div>
+
+          <div class="space-y-2 border-b border-gray-800/60 pb-3">
+            <span class="font-bold text-gray-300 block">⑤ E-mail（e）</span>
+            <div class="grid grid-cols-4 gap-2">
+              <div><label class="text-[8.5px] text-gray-500">X</label><input type="number" id="coordEmailX" step="0.1" class="w-full bg-[#2a2420] border border-gray-700 rounded p-1 text-center text-white"></div>
+              <div><label class="text-[8.5px] text-gray-500">Y</label><input type="number" id="coordEmailY" step="0.1" class="w-full bg-[#2a2420] border border-gray-700 rounded p-1 text-center text-white"></div>
+              <div><label class="text-[8.5px] text-gray-500">W</label><input type="number" id="coordEmailW" step="0.1" class="w-full bg-[#2a2420] border border-gray-700 rounded p-1 text-center text-white"></div>
+              <div><label class="text-[8.5px] text-gray-500">H</label><input type="number" id="coordEmailH" step="0.1" class="w-full bg-[#2a2420] border border-gray-700 rounded p-1 text-center text-white"></div>
+            </div>
+            <div class="mt-1"><input type="text" id="inputEmail" class="w-full bg-[#2a2420] border border-gray-700 rounded px-2 py-1 text-[11px] text-white"></div>
+          </div>
+
+          <div class="space-y-2 border-b border-gray-800/60 pb-3">
+            <span class="font-bold text-gray-300 block">⑥ ロゴ位置（logo）</span>
+            <div class="grid grid-cols-4 gap-2">
+              <div><label class="text-[8.5px] text-gray-500">X</label><input type="number" id="coordLogoX" step="0.1" class="w-full bg-[#2a2420] border border-gray-700 rounded p-1 text-center text-white"></div>
+              <div><label class="text-[8.5px] text-gray-500">Y</label><input type="number" id="coordLogoY" step="0.1" class="w-full bg-[#2a2420] border border-gray-700 rounded p-1 text-center text-white"></div>
+              <div><label class="text-[8.5px] text-gray-500">W</label><input type="number" id="coordLogoW" step="0.1" class="w-full bg-[#2a2420] border border-gray-700 rounded p-1 text-center text-white"></div>
+              <div><label class="text-[8.5px] text-gray-500">H</label><input type="number" id="coordLogoH" step="0.1" class="w-full bg-[#2a2420] border border-gray-700 rounded p-1 text-center text-white"></div>
+            </div>
+          </div>
 
           <div class="space-y-2 pb-3">
             <span class="font-bold text-gray-300 block">⑦ vCard保存用データ</span>
