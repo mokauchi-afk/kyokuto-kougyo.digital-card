@@ -233,8 +233,8 @@
         <span id="btnFlipText">裏面を表示する（タップ回転）</span>
       </button>
 
-      <!-- 👑 【究極の王道アプローチ】同梱されたcontact.vcfを直接開く純粋なリンク -->
-      <a href="contact.vcf" onclick="return checkAppBrowser(event)" class="w-full py-3.5 bg-gradient-to-r from-[#211a13] via-[#120e0a] to-[#211a13] text-[#ceba8c] border border-[#6b5842] rounded-lg font-serif tracking-[0.2em] text-xs flex items-center justify-center gap-2 shadow-xl hover:border-[#8e765a] hover:text-white transition active:scale-[0.97] duration-150 relative z-20">
+      <!-- 👑 【究極の自動生成アプローチ】404エラーを完全に排除し、その場でVCFを作って遷移させる -->
+      <a href="#" onclick="downloadVCard(event)" class="w-full py-3.5 bg-gradient-to-r from-[#211a13] via-[#120e0a] to-[#211a13] text-[#ceba8c] border border-[#6b5842] rounded-lg font-serif tracking-[0.2em] text-xs flex items-center justify-center gap-2 shadow-xl hover:border-[#8e765a] hover:text-white transition active:scale-[0.97] duration-150 relative z-20">
         <i class="fa-solid fa-address-card"></i>
         連絡先を保存
       </a>
@@ -299,14 +299,11 @@
         </div>
       </div>
       
-      <!-- 👑 新規追加: VCF製造パネル -->
+      <!-- 管理者向けVCFエクスポート機能は維持 -->
       <div class="panel bg-gray-900 border-gray-700 mt-6 p-4 rounded-xl">
-        <h3 class="font-bold mb-3 text-[#d4af37]">📇 4. vCardファイルの生成</h3>
-        <p class="text-xs text-gray-400 mb-3 leading-relaxed">
-          iPhone（iOS Safari）等で確実に連絡先を保存させるため、以下のボタンから「contact.vcf」を生成・ダウンロードし、GitHubの「index.html」と同じ場所にアップロードしてください。
-        </p>
+        <h3 class="font-bold mb-3 text-[#d4af37]">📇 管理者用ツール</h3>
         <button id="btnExportVcf" class="w-full py-2 bg-[#238636] hover:bg-[#2ea043] text-white font-bold rounded transition">
-          <i class="fa-solid fa-download mr-1"></i> contact.vcf をダウンロード
+          <i class="fa-solid fa-download mr-1"></i> (バックアップ用) vCardをダウンロード
         </button>
       </div>
 
@@ -395,20 +392,82 @@
       setTimeout(() => { t.style.display = 'none'; }, 3000);
     }
 
-    // 👑 アプリ内ブラウザ（LINE等）のブロック回避用フォールバック
-    // 純粋な静的リンク（href="contact.vcf"）であっても、LINE内ブラウザ等は.vcfを文字化け表示してしまう事があるため警告を残す
-    function checkAppBrowser(e) {
+    // 👑 アプリ内ブラウザ（LINE等）のブロックを判別する関数
+    function checkAppBrowser() {
       const ua = navigator.userAgent.toLowerCase();
       const isAppBrowser = /line|micromessenger|instagram|facebook|fbav|fban|twitter|yahoojapan/.test(ua);
       if (isAppBrowser) {
-        e.preventDefault(); 
-        alert("【重要】\nLINEやInstagram等のアプリ内ブラウザでは、正しく連絡先が保存されません。\n\n画面右下や右上のメニューから、『Safariで開く』または『ブラウザで開く』を選択してから、再度ボタンを押してください。");
-        return false;
+        alert("【重要】\nLINEやInstagram等のアプリ内ブラウザでは、スマホのセキュリティ制限により連絡先が保存できません。\n\n画面右下や右上のメニューから、『Safariで開く』または『ブラウザで開く』を選択してから再度保存してください。");
+        return true; 
       }
-      return true;
+      return false;
     }
 
-    // 👑 データを一箇所に集約し、名刺のリンクを同期する処理
+    // 👑 【究極の自動生成アプローチ】404エラーを完全に排除し、iPhoneでも確実に保存できる最強の処理
+    function downloadVCard(e) {
+      if(e) e.preventDefault(); // デフォルトのリンク遷移をストップ
+      
+      // アプリ内ブラウザの場合は警告を出して処理を停止
+      if (checkAppBrowser()) return;
+
+      // 1. 最新の入力データを取得（空の場合はJSONから取得）
+      const d = globalCardData || {};
+      const org = document.getElementById('inputCompanyName').value || d.companyName || "";
+      const name = document.getElementById('inputName').value || d.name || "";
+      const title = document.getElementById('inputTitle').value || d.title || "";
+      const telMain = document.getElementById('inputTelMain').value || d.tel_main || "";
+      const telMobile = document.getElementById('inputTelMobile').value || d.tel_mobile || "";
+      const fax = document.getElementById('inputFax').value || d.fax || "";
+      const email = document.getElementById('inputEmail').value || d.email || "";
+      const address = document.getElementById('inputAddrText').value || d.address || "";
+      const companyHp = document.getElementById('inputWebsite').value || d.website || "";
+      
+      // 👑 NFCやQRから飛んできた「完全なURL」を取得
+      const myCardUrl = window.location.href.split('?')[0]; 
+      const cleanAddr = address.replace(/〒?\d{3}-\d{4}\s*/, '').trim();
+      const mapUrl = document.getElementById('inputMapUrl').value || (cleanAddr ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(cleanAddr)}` : "");
+
+      // 2. vCard（連絡先）データの生成。すべての情報とリンクを漏れなく記述
+      const vCardLines = [
+        "BEGIN:VCARD",
+        "VERSION:3.0",
+        `N:;${name};;;`,
+        `FN:${name}`,
+        `ORG:${org}`,
+        `TITLE:${title}`,
+        `TEL;TYPE=WORK,VOICE:${telMain.replace(/[^\d+()]/g, '')}`,
+        `TEL;TYPE=CELL:${telMobile.replace(/[^\d+()]/g, '')}`,
+        `TEL;TYPE=FAX:${fax.replace(/[^\d+()]/g, '')}`,
+        `EMAIL:${email}`,
+        `ADR:;;${address};;;;日本`,
+        `URL:${companyHp}`,
+        `URL;TYPE=MAP:${mapUrl}`, 
+        `URL;TYPE=PROFILE:${myCardUrl}`, 
+        `NOTE:【デジタル名刺を開く】\\n${myCardUrl}\\n\\n【Google Mapで開く】\\n${mapUrl}\\n\\n【会社HP】\\n${companyHp}`,
+        "END:VCARD"
+      ];
+      
+      const vcfStr = vCardLines.join('\r\n');
+
+      // 3. 【iOSダウンロードブロック回避の真髄】動的URLに直接遷移させる
+      try {
+        const bom = new Uint8Array([0xEF, 0xBB, 0xBF]); // 文字化け防止BOM
+        const blob = new Blob([bom, vcfStr], { type: "text/vcard;charset=utf-8" });
+        const url = window.URL.createObjectURL(blob);
+        
+        // 👑 iOSでもAndroidでも確実に作動する最強の直接遷移方式
+        // 外部ファイル（contact.vcf）が存在しなくても、ここで作り出したデータをファイルとして読み込ませます
+        window.location.href = url;
+        
+        setTimeout(() => {
+          window.URL.revokeObjectURL(url);
+        }, 5000);
+      } catch (err) {
+        console.error(err);
+        alert("VCFの生成に失敗しました。別のブラウザでお試しください。");
+      }
+    }
+
     function syncStudioToView() {
       // 唯一のデータソースからすべての値を取得
       const fImg = document.getElementById('inputFrontImgUrl').value.trim();
@@ -496,63 +555,9 @@
       rootF.classList.toggle('has-emboss-filter', document.getElementById('toggleEmboss').checked);
     }
 
-    // 👑 管理者向け：contact.vcf ファイルの確実な生成とダウンロード機能 (iOS完全対応版)
+    // 👑 管理者向け：バックアップ機能は維持
     document.getElementById('btnExportVcf').addEventListener('click', () => {
-      const d = globalCardData || {};
-      const org = document.getElementById('inputCompanyName').value || d.companyName || "";
-      const name = document.getElementById('inputName').value || d.name || "";
-      const title = document.getElementById('inputTitle').value || d.title || "";
-      const telMain = document.getElementById('inputTelMain').value || d.tel_main || "";
-      const telMobile = document.getElementById('inputTelMobile').value || d.tel_mobile || "";
-      const fax = document.getElementById('inputFax').value || d.fax || "";
-      const email = document.getElementById('inputEmail').value || d.email || "";
-      const address = document.getElementById('inputAddrText').value || d.address || "";
-      const companyHp = document.getElementById('inputWebsite').value || d.website || "";
-      
-      // デジタル名刺の完全なURLと地図URLを生成
-      const myCardUrl = window.location.href.split('?')[0]; 
-      const cleanAddr = address.replace(/〒?\d{3}-\d{4}\s*/, '').trim();
-      const mapUrl = document.getElementById('inputMapUrl').value || (cleanAddr ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(cleanAddr)}` : "");
-
-      // ご提示いただいた最強のGoogle連絡先フォーマット（RFC準拠）
-      const vCardLines = [
-        "BEGIN:VCARD",
-        "VERSION:3.0",
-        `N:;${name};;;`,
-        `FN:${name}`,
-        `ORG:${org}`,
-        `TITLE:${title}`,
-        `TEL;TYPE=WORK,VOICE:${telMain.replace(/[^\d+()]/g, '')}`,
-        `TEL;TYPE=CELL:${telMobile.replace(/[^\d+()]/g, '')}`,
-        `TEL;TYPE=FAX:${fax.replace(/[^\d+()]/g, '')}`,
-        `EMAIL:${email}`,
-        `ADR:;;${address};;;;日本`,
-        `URL:${companyHp}`,
-        `URL;TYPE=MAP:${mapUrl}`, 
-        `URL;TYPE=PROFILE:${myCardUrl}`, 
-        `NOTE:【デジタル名刺を開く】\\n${myCardUrl}\\n\\n【Google Mapで開く】\\n${mapUrl}\\n\\n【会社HP】\\n${companyHp}`,
-        "END:VCARD"
-      ];
-      
-      const vcfStr = vCardLines.join('\r\n');
-      
-      try {
-        const bom = new Uint8Array([0xEF, 0xBB, 0xBF]); // 文字化け防止BOM
-        const blob = new Blob([bom, vcfStr], { type: "text/vcard" });
-        const url = window.URL.createObjectURL(blob);
-        
-        // 👑 iOSでも確実に作動する直接遷移方式（a.downloadを回避）
-        window.location.href = url;
-        
-        setTimeout(() => {
-          window.URL.revokeObjectURL(url);
-        }, 5000);
-        
-        showToast("contact.vcf を生成しました。GitHubへアップロードしてください。");
-      } catch (err) {
-        console.error(err);
-        alert("VCFの生成に失敗しました。別のブラウザでお試しください。");
-      }
+      downloadVCard(null); // 上記の同じ処理を呼び出してDL
     });
 
     function init() {
