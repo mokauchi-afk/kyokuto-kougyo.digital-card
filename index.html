@@ -9,7 +9,6 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@300;400;500;700;900&family=Shippori+Mincho:wght@400;500;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Font Awesomeの読み込み -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
   <style>
@@ -77,7 +76,7 @@
     }
     .edit-mode-active .coord-target { border: 1px dashed rgba(206, 186, 140, 0.75) !important; background-color: rgba(206, 186, 140, 0.15) !important; }
 
-    /* ロゴ画像の浮き出しエンボス表現（物理的に浮かせる） */
+    /* ロゴ画像の浮き出しエンボス表現 */
     .foil-logo {
       position: absolute; 
       left: calc(var(--el-x, 0) * 1%); top: calc(var(--el-y, 0) * 1%);
@@ -88,7 +87,7 @@
     }
     .edit-mode-active .foil-logo { border: 1px dashed #d4af37; }
 
-    /* 👑裏面QRコード：文字被りを防ぐ絶対左下・極小・横並び配置 */
+    /* 裏面QRコード */
     .back-info {
       position: absolute; 
       left: 2%; bottom: 2%;  
@@ -209,7 +208,7 @@
             
             <img id="viewBackImg" src="" class="card-face-image" alt="名刺裏面" onerror="this.src='https://placehold.co/910x550/1a1a1a/ffffff?text=Image+Not+Found';">
             
-            <!-- QRコードとURL（絶対左下） -->
+            <!-- QRコードとURL -->
             <div class="back-info" id="qrContainer">
               <img id="qrCode" src="" alt="QR">
               <div class="back-info-text">
@@ -376,8 +375,19 @@
       setTimeout(() => { t.style.display = 'none'; }, 3000);
     }
 
-    // 👑 【完全版】連絡先保存処理 (Safariのダウンロードブロックを回避する共有機能)
+    // 👑 【真・完全版】OS直通アプローチで連絡先に追加する処理
     function downloadVCard() {
+      // アプリ内ブラウザの厳格な検知 (LINE, Instagram, Facebookなど)
+      const ua = navigator.userAgent.toLowerCase();
+      const isAppBrowser = /line|micromessenger|instagram|facebook|fbav|fban|twitter|yahoojapan/.test(ua);
+
+      // アプリ内ブラウザはOS機能が使えないため警告を出す
+      if (isAppBrowser) {
+        alert("【重要】\nLINE等のアプリ内ブラウザでは、スマホのセキュリティ制限により連絡先が保存できません。\n\n画面右下の「🧭（コンパス）」や「共有アイコン」から、『Safariで開く』または『ブラウザで開く』を選択してから再度保存してください。");
+        return; 
+      }
+
+      // 1. 最新の入力データを取得（空の場合はJSONから取得）
       const d = globalCardData || {};
       const org = document.getElementById('inputCompanyName').value || d.companyName || "";
       const name = document.getElementById('inputName').value || d.name || "";
@@ -389,14 +399,12 @@
       const address = document.getElementById('inputAddrText').value || d.address || "";
       const companyHp = document.getElementById('inputWebsite').value || d.website || "";
       
-      // 👑 URLの取得 (NFCで開いた完全なURLを維持)
+      // 👑 NFCやQRから飛んできた「完全なURL」を取得
       const myCardUrl = window.location.href; 
-      // 住所から郵便番号を省いて正確なGoogle Maps検索用URLを生成
-      const cleanAddress = address.replace(/〒?\d{3}-\d{4}\s*/, '').trim();
-      const mapUrl = document.getElementById('inputMapUrl').value || (cleanAddress ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(cleanAddress)}` : "");
+      const cleanAddr = address.replace(/〒?\d{3}-\d{4}\s*/, '').trim();
+      const mapUrl = document.getElementById('inputMapUrl').value || (cleanAddr ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(cleanAddr)}` : "");
 
-      // 👑 vCard文字列の生成 (改行コード \r\n, メモ内の改行は \\n)
-      // TYPE=OTHER で名刺URLを保存し、連絡先から確実にタップ可能に
+      // 2. vCard（連絡先）データの生成。すべての情報とリンクを漏れなく記述
       const vcfStr = 
 `BEGIN:VCARD\r
 VERSION:3.0\r
@@ -410,53 +418,36 @@ TEL;TYPE=WORK,FAX:${fax.replace(/[^\d+()]/g, '')}\r
 EMAIL;TYPE=WORK:${email}\r
 ADR;TYPE=WORK:;;${address};;;;日本\r
 URL;TYPE=WORK:${companyHp}\r
-URL;TYPE=OTHER:${myCardUrl}\r
+URL:${myCardUrl}\r
 NOTE:【デジタル名刺を開く】\\n${myCardUrl}\\n\\n【Google Mapで開く】\\n${mapUrl}\r
 END:VCARD`;
 
-      const bom = new Uint8Array([0xEF, 0xBB, 0xBF]);
-      const blob = new Blob([bom, vcfStr], { type: "text/vcard;charset=utf-8" });
-      const fileName = `${org}_${name}.vcf`.replace(/\s/g, '');
+      // 3. 端末・OSごとに「最も確実な」方法に分岐
+      // iPadなど最新機種のデスクトップモードも漏らさずiOSとして検知
+      const isIOS = (/iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) && !window.MSStream;
 
-      // 👑 iOS Safari 用：Web Share API を使ってOSの共有(連絡先追加)を直接呼び出す
-      if (navigator.canShare && navigator.share) {
-        try {
-          const file = new File([blob], fileName, { type: 'text/vcard' });
-          if (navigator.canShare({ files: [file] })) {
-            navigator.share({
-              files: [file],
-              title: `${name}の連絡先`,
-            }).catch((err) => {
-              // ユーザーキャンセル(AbortError)以外は通常のダウンロードへ移行
-              if (err.name !== 'AbortError') {
-                fallbackDownload(blob, fileName);
-              }
-            });
-            return; // 共有シートが起動できればここで処理終了
-          }
-        } catch (e) {
-          console.warn('Share API error', e);
-        }
+      if (isIOS) {
+        // 👑 iOS最強のアプローチ：Data URIによる直接遷移
+        // 余計な共有シートを出さずに、ダイレクトに「新規連絡先」の画面を立ち上げます。
+        const utf8str = '\uFEFF' + vcfStr; // 文字化け防止のBOM
+        const b64 = btoa(unescape(encodeURIComponent(utf8str)));
+        window.location.href = 'data:text/vcard;charset=utf-8;base64,' + b64;
+      } else {
+        // 👑 Android/PC最強のアプローチ：確実なファイルダウンロード
+        const bom = new Uint8Array([0xEF, 0xBB, 0xBF]);
+        const blob = new Blob([bom, vcfStr], { type: "text/vcard;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = url;
+        a.download = `${org}_${name}.vcf`.replace(/\s/g, '');
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => {
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+        }, 100);
       }
-
-      // Web Share APIが使えないブラウザ（PCや一部Android）用
-      fallbackDownload(blob, fileName);
-    }
-
-    // 従来の強制ダウンロード処理
-    function fallbackDownload(blob, fileName) {
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.style.display = 'none';
-      a.href = url; 
-      a.download = fileName; 
-      document.body.appendChild(a); 
-      a.click(); 
-      setTimeout(() => {
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-      }, 100);
-      showToast("連絡先データをダウンロードしました");
     }
 
     function syncStudioToView() {
