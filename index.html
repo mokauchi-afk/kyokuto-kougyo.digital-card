@@ -9,8 +9,13 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@300;400;500;700;900&family=Shippori+Mincho:wght@400;500;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Font Awesomeの読み込み -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
+  <!-- Cropper.js for Image Trimming -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
 
   <style>
     :root { --effect-color: #d4af37; }
@@ -55,13 +60,13 @@
     }
 
     .card-front { transform: rotateY(0deg) translateZ(1px); z-index: 2; }
-    .card-back { transform: rotateY(180deg) translateZ(1px); z-index: 1; pointer-events: none; }
+    .card-back { transform: rotateY(180deg) translateZ(1px); z-index: 1; pointer-events: none; visibility: hidden; }
 
     .card-face-image {
       position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 2; pointer-events: none;
       transition: filter 0.3s ease;
     }
-    .has-emboss-filter .card-face-image {
+    .has-emboss .card-face-image {
       filter: contrast(1.4) brightness(0.92) saturate(1.1);
     }
 
@@ -71,11 +76,18 @@
       left: calc(var(--el-x, 0) * 1%); top: calc(var(--el-y, 0) * 1%);
       width: calc(var(--el-w, 100) * 1%); height: calc(var(--el-h, 50) * 1%);
       z-index: 50; 
-      border: 1px dashed rgba(206, 186, 140, 0.0); transition: border-color 0.2s ease, background-color 0.2s ease; 
+      border: 1px dashed transparent; transition: border-color 0.2s ease, background-color 0.2s ease; 
       cursor: pointer; -webkit-tap-highlight-color: rgba(255,255,255,0.2);
       pointer-events: auto; 
     }
-    .edit-mode-active .coord-target { border: 1px dashed rgba(206, 186, 140, 0.75) !important; background-color: rgba(206, 186, 140, 0.15) !important; }
+    .edit-mode-active .coord-target { 
+      border: 1px dashed rgba(239, 68, 68, 0.8) !important; 
+      background-color: rgba(239, 68, 68, 0.3) !important; 
+    }
+    .edit-mode-active .coord-target::after {
+      content: attr(data-label); color: white; font-size: 10px; font-weight: bold; text-shadow: 1px 1px 2px black;
+      display: flex; align-items: center; justify-content: center; width: 100%; height: 100%;
+    }
 
     /* ロゴ画像の浮き出しエンボス表現 */
     .foil-logo {
@@ -85,8 +97,9 @@
       z-index: 20; pointer-events: none;
       transform: translateZ(5px);
       filter: drop-shadow(1px 2px 2px rgba(0,0,0,0.6)) brightness(1.1) contrast(1.2);
+      display: none;
     }
-    .edit-mode-active .foil-logo { border: 1px dashed #d4af37; }
+    .edit-mode-active .foil-logo { border: 1px dashed #d4af37; display: block; background: rgba(212,175,55,0.2); }
 
     /* 裏面QRコード */
     .back-info {
@@ -100,6 +113,7 @@
       box-shadow: 0 2px 5px rgba(0,0,0,0.2);
       pointer-events: none; 
       max-width: 140px; 
+      display: none;
     }
     .back-info img {
       width: 26px; height: 26px; 
@@ -117,26 +131,51 @@
 
     /* エフェクト */
     .card-shine { position: absolute; inset: 0; pointer-events: none; z-index: 5; opacity: 0; transition: opacity 0.3s ease; background-size: 300% 300%; background-position: 100% 100%; mix-blend-mode: overlay; background: linear-gradient(115deg, transparent 20%, rgba(255,255,255,0.3) 40%, rgba(255,228,242,0.3) 50%, transparent 70%); }
-    .has-pearl-shine .card-shine { opacity: 1; }
+    .has-pearl .card-shine { opacity: 1; }
 
     @keyframes shineSweep { 0% { left: -120%; opacity: 0; } 15% { opacity: 0.8; } 30% { left: 120%; opacity: 0; } 100% { left: 120%; opacity: 0; } }
     .card-sweep-light { position: absolute; top: -50%; height: 200%; width: clamp(20px, 10vw, 60px); background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4) 45%, rgba(255, 255, 255, 0.65) 50%, rgba(255, 255, 255, 0.4) 55%, transparent); transform: rotate(25deg); pointer-events: none; z-index: 4; display: none; }
-    .has-sweep-shine .card-sweep-light { display: block; animation: shineSweep 5s cubic-bezier(0.3, 0.8, 0.3, 1) infinite; }
+    .has-sweep .card-sweep-light { display: block; animation: shineSweep 5s cubic-bezier(0.3, 0.8, 0.3, 1) infinite; }
 
     @keyframes borderSweep { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     .card-border-light-wrap { position: absolute; inset: -150%; z-index: 0; pointer-events: none; display: none; align-items: center; justify-content: center; }
     .card-border-light { width: 100%; height: 100%; background: conic-gradient(transparent 70%, var(--effect-color, #ceba8c) 88%, #ffffff 94%, var(--effect-color, #ceba8c) 98%, transparent 100%); animation: borderSweep 5s linear infinite; }
     .card-border-mask { position: absolute; inset: 2px; background: inherit; border-radius: inherit; z-index: 1; pointer-events: none; }
-    .has-border-sweep .card-border-light-wrap { display: flex; }
+    .has-border .card-border-light-wrap { display: flex; }
 
+    /* ガラス調SNSボタン */
+    .social-glass-container { display: flex; justify-content: center; gap: 15px; margin-top: 10px; }
+    .social-glass {
+      width: 45px; height: 45px; border-radius: 50%; display: flex; justify-content: center; align-items: center;
+      background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+      color: #fff; font-size: 18px; text-decoration: none; transition: 0.3s;
+    }
+    .social-glass:hover { background: rgba(206, 186, 140, 0.2); border-color: var(--effect-color); transform: translateY(-3px); color: var(--effect-color); }
+
+    /* UI components */
     .custom-scrollbar::-webkit-scrollbar { width: 6px; }
     .custom-scrollbar::-webkit-scrollbar-track { background: #110f0d; }
     .custom-scrollbar::-webkit-scrollbar-thumb { background: #33281e; border-radius: 3px; }
     
+    .panel { background: #1e1e1e; border: 1px solid #333; border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .input-field { width: 100%; background: #2d2d2d; border: 1px solid #444; color: #fff; padding: 8px; border-radius: 4px; font-size: 12px; }
+    .input-field:focus { outline: none; border-color: #d4af37; }
+    .label { font-size: 11px; color: #9ca3af; margin-bottom: 4px; display: block; font-weight: bold;}
+    .label-sm { font-size: 10px; color: #9ca3af; margin-bottom: 2px; display: block; font-weight: bold;}
+    
     #toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #111; border: 1px solid #d4af37; color: #d4af37; padding: 12px 24px; border-radius: 30px; font-size: 13px; z-index: 9999; display: none; white-space: nowrap; box-shadow: 0 4px 12px rgba(0,0,0,0.5);}
+
+    /* Cropper Modal */
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 9999;
+      display: none; flex-direction: column; align-items: center; justify-content: center; padding: 20px;
+    }
+    .modal-overlay.is-active { display: flex; }
+    .cropper-container-wrapper { width: 100%; max-width: 600px; height: 60vh; background: #000; margin-bottom: 20px;}
   </style>
 
-  <!-- 初期データ JSON (情報を一箇所にまとめた唯一のデータソース) -->
+  <!-- 初期データ JSON -->
   <script id="gas-data" type="application/json">
   {
     "companyName": "極東興業株式会社",
@@ -158,19 +197,24 @@
       "f": { "x": 55, "y": 73, "w": 35, "h": 6 },
       "t2": { "x": 55, "y": 78, "w": 35, "h": 6 },
       "e": { "x": 32, "y": 84, "w": 58, "h": 7 },
-      "logo": { "x": 5.5, "y": 9, "w": 11, "h": 18 } 
+      "logo": { "x": 5.5, "y": 9, "w": 11, "h": 18 },
+      "h": { "x": 2, "y": 85, "w": 30, "h": 10 }
     }
   }
   </script>
 </head>
 <body class="flex flex-col lg:flex-row items-stretch justify-start min-h-screen relative" id="mainBody">
 
+  <!-- ==========================================
+       VIEWER AREA (公開画面)
+       ========================================== -->
   <div class="flex-1 flex flex-col items-center justify-center p-6 md:p-12 space-y-8 relative">
     
     <div class="text-center space-y-1">
       <span class="text-[9px] tracking-[0.35em] uppercase text-[#ceba8c] font-bold">Paper-Faithful Digital Twin</span>
     </div>
 
+    <!-- 3D Engine -->
     <div class="card-theater" id="cardStage">
       <div class="card-tilt" id="cardTilt">
         <div class="card-container" id="cardContainer">
@@ -178,37 +222,37 @@
           <!-- FRONT FACE -->
           <div class="card-face card-front" id="cardFront">
             <div class="card-border-light-wrap" id="borderSweepWrap">
-              <div class="card-border-light" id="borderSweepElement"></div>
+              <div class="card-border-light"></div>
             </div>
             <div class="card-border-mask"></div>
-            <div class="card-shine" id="shineFront"></div>
-            <div class="card-sweep-light" id="sweepFront"></div>
+            <div class="card-shine"></div>
+            <div class="card-sweep-light"></div>
             
-            <img id="viewFrontImg" src="" class="card-face-image" alt="名刺表面" onerror="this.src='https://placehold.co/910x550/1a1a1a/ffffff?text=Image+Not+Found';">
+            <img id="viewFrontImg" src="" class="card-face-image" alt="名刺表面" onerror="this.src='https://placehold.co/910x550/1a1a1a/ffffff?text=No+Image';">
 
             <div class="card-inner-targets">
-              <!-- 全てのリンク用ホットスポット -->
-              <a id="linkAddr" href="#" target="_blank" rel="noopener noreferrer" class="coord-target"></a>
-              <a id="linkTelMain" href="#" class="coord-target"></a>
-              <a id="linkFax" href="#" class="coord-target"></a>
-              <a id="linkTelMobile" href="#" class="coord-target"></a>
-              <a id="linkEmail" href="#" class="coord-target"></a>
+              <!-- ホットスポット -->
+              <a id="hsAddr" href="#" target="_blank" rel="noopener noreferrer" class="coord-target" data-label="📍 地図"></a>
+              <a id="hsTel" href="#" class="coord-target" data-label="📞 代表電話"></a>
+              <a id="hsFax" href="#" class="coord-target" data-label="📠 FAX"></a>
+              <a id="hsMobile" href="#" class="coord-target" data-label="📱 携帯"></a>
+              <a id="hsEmail" href="#" class="coord-target" data-label="✉️ メール"></a>
               
               <!-- エンボスロゴ画像 -->
-              <img id="logoFoil" src="" class="foil-logo" alt="ロゴ" onerror="this.style.display='none';">
+              <img id="logoFoil" src="" class="foil-logo" alt="ロゴ">
             </div>
           </div>
 
           <!-- BACK FACE -->
           <div class="card-face card-back" id="cardBack">
             <div class="card-border-light-wrap" id="borderSweepWrapBack">
-              <div class="card-border-light" id="borderSweepElementBack"></div>
+              <div class="card-border-light"></div>
             </div>
             <div class="card-border-mask"></div>
-            <div class="card-shine" id="shineBack"></div>
-            <div class="card-sweep-light" id="sweepBack"></div>
+            <div class="card-shine"></div>
+            <div class="card-sweep-light"></div>
             
-            <img id="viewBackImg" src="" class="card-face-image" alt="名刺裏面" onerror="this.src='https://placehold.co/910x550/1a1a1a/ffffff?text=Image+Not+Found';">
+            <img id="viewBackImg" src="" class="card-face-image" alt="名刺裏面" onerror="this.src='https://placehold.co/910x550/1a1a1a/ffffff?text=No+Image';">
             
             <!-- QRコードとURL -->
             <div class="back-info" id="qrContainer">
@@ -220,168 +264,568 @@
             </div>
 
             <!-- 裏面のWEBサイトへのリンク領域 -->
-            <a id="linkWeb" href="#" target="_blank" rel="noopener" class="coord-target"></a>
+            <a id="hsHp" href="#" target="_blank" rel="noopener" class="coord-target" data-label="🌐 HP"></a>
           </div>
 
         </div>
       </div>
     </div>
 
-    <!-- アクションボタン群 -->
+    <!-- Action Buttons -->
     <div class="w-full max-w-xs flex flex-col gap-3 pt-2">
       <!-- 裏返すボタン -->
-      <button id="btnFlipExternal" onclick="flipCardFromBtn()" class="w-full py-3 bg-[#171412] text-gray-300 border border-gray-800 rounded-lg font-sans text-xs flex items-center justify-center gap-2 hover:border-[#ceba8c] hover:text-[#ceba8c] transition active:scale-[0.97] duration-150 relative z-20">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+      <button id="btnFlipExternal" class="w-full py-3 bg-[#171412] text-gray-300 border border-gray-800 rounded-lg font-sans text-xs flex items-center justify-center gap-2 hover:border-[#ceba8c] hover:text-[#ceba8c] transition active:scale-[0.97] duration-150 relative z-20">
+        <i class="fa-solid fa-rotate"></i>
         <span id="btnFlipText">裏面を表示する（タップ回転）</span>
       </button>
 
-      <!-- 👑 連絡先を保存ボタン -->
-      <a href="#" onclick="downloadVCard(event)" class="w-full py-3.5 bg-gradient-to-r from-[#211a13] via-[#120e0a] to-[#211a13] text-[#ceba8c] border border-[#6b5842] rounded-lg font-serif tracking-[0.2em] text-xs flex items-center justify-center gap-2 shadow-xl hover:border-[#8e765a] hover:text-white transition active:scale-[0.97] duration-150 relative z-20">
+      <!-- 👑 連絡先保存ボタン -->
+      <a href="#" id="btnDownloadVCard" class="w-full py-3.5 bg-gradient-to-r from-[#211a13] via-[#120e0a] to-[#211a13] text-[#ceba8c] border border-[#6b5842] rounded-lg font-serif tracking-[0.2em] text-xs flex items-center justify-center gap-2 shadow-xl hover:border-[#8e765a] hover:text-white transition active:scale-[0.97] duration-150 relative z-20">
         <i class="fa-solid fa-address-card"></i>
         連絡先を保存
       </a>
+
+      <!-- SNSガラス調ボタン領域 -->
+      <div class="social-glass-container" id="socialBox">
+        <!-- JS動的生成 -->
+      </div>
     </div>
   </div>
 
-  <button id="btnStudioTrigger" onclick="toggleStudioPanel()" class="fixed bottom-4 right-4 z-50 p-3.5 bg-[#1e1712]/95 text-[#ceba8c] border border-[#524131] rounded-full shadow-2xl hover:bg-[#30251c] active:scale-95 transition flex items-center justify-center hidden" title="秘密の編集スタジオ">
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-      <path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
-    </svg>
+  <!-- スタジオ起動トリガー -->
+  <button id="btnStudioTrigger" class="fixed bottom-4 right-4 z-50 p-3.5 bg-[#1e1712]/95 text-[#ceba8c] border border-[#524131] rounded-full shadow-2xl hover:bg-[#30251c] active:scale-95 transition flex items-center justify-center hidden" title="秘密の編集スタジオ">
+    <i class="fa-solid fa-wand-magic-sparkles"></i>
   </button>
 
-  <div id="studioPanel" class="hidden w-full lg:w-[450px] bg-[#110f0d] border-l border-gray-800 p-6 md:p-8 flex-col justify-between overflow-y-auto max-h-screen custom-scrollbar z-40 relative">
+  <!-- ==========================================
+       STUDIO AREA (管理者画面)
+       ========================================== -->
+  <div id="studioPanel" class="hidden w-full lg:w-[450px] bg-[#110f0d] border-l border-gray-800 p-6 flex-col justify-between overflow-y-auto max-h-screen custom-scrollbar z-40 relative">
     <div class="space-y-6 font-sans">
-      <div>
-        <div class="flex items-center justify-between">
-          <h3 class="text-base font-bold text-white tracking-widest font-serif flex items-center gap-2">
-            <span class="text-[#ceba8c]">✦</span> 名刺編集スタジオ
-          </h3>
-          <button onclick="toggleStudioPanel()" class="text-gray-400 hover:text-white text-[10px] px-2.5 py-1 bg-gray-900 border border-gray-800 rounded">閉じる</button>
-        </div>
+      
+      <div class="flex items-center justify-between">
+        <h3 class="text-base font-bold text-white tracking-widest font-serif flex items-center gap-2">
+          <span class="text-[#ceba8c]">✦</span> 名刺編集スタジオ
+        </h3>
+        <button id="btnCloseStudio" class="text-gray-400 hover:text-white text-[10px] px-2.5 py-1 bg-gray-900 border border-gray-800 rounded">閉じる</button>
       </div>
 
       <div class="space-y-5 text-sm text-gray-300">
-        <h4 class="text-[11px] font-bold text-[#ceba8c] tracking-widest uppercase border-b border-[#2d2319] pb-0.5 pt-2">🖼️ 名刺画像の設定</h4>
-        <div class="grid grid-cols-2 gap-3">
-          <div><label class="block text-[10px] font-semibold text-gray-400 mb-1">表面画像URL</label><input type="text" id="inputFrontImgUrl" class="w-full bg-[#1b1714] border border-gray-700 rounded px-3 py-2 text-xs text-white"></div>
-          <div><label class="block text-[10px] font-semibold text-gray-400 mb-1">裏面画像URL</label><input type="text" id="inputBackImgUrl" class="w-full bg-[#1b1714] border border-gray-700 rounded px-3 py-2 text-xs text-white"></div>
-          <div class="col-span-2"><label class="block text-[10px] font-semibold text-gray-400 mb-1">ロゴ画像URL</label><input type="text" id="inputLogoImgUrl" class="w-full bg-[#1b1714] border border-gray-700 rounded px-3 py-2 text-xs text-white"></div>
-        </div>
-
-        <h4 class="text-[11px] font-bold text-[#ceba8c] tracking-widest uppercase border-b border-[#2d2319] pb-0.5 pt-2">🎨 エフェクトセレクト</h4>
-        <div class="grid grid-cols-2 gap-3">
-          <div class="flex items-center justify-between"><span class="font-bold text-gray-300 text-[10px]">キラッと光線</span><input type="checkbox" id="toggleSweepShine" class="w-4 h-4 rounded text-[#ceba8c]"></div>
-          <div class="flex items-center justify-between"><span class="font-bold text-gray-300 text-[10px]">動く光る枠線</span><input type="checkbox" id="toggleBorderSweep" class="w-4 h-4 rounded text-[#ceba8c]"></div>
-          <div class="flex items-center justify-between col-span-2"><span class="font-bold text-gray-300 text-[10px]">画像全体のコントラスト強調</span><input type="checkbox" id="toggleEmboss" class="w-4 h-4 rounded text-[#ceba8c]"></div>
-        </div>
-
-        <h4 class="text-[11px] font-bold text-[#ceba8c] tracking-widest uppercase border-b border-[#2d2319] pb-0.5 pt-2">📐 タップ領域の微調整</h4>
-        <div class="flex items-center justify-between mb-2">
-          <p class="text-[9.5px] text-gray-400">画像の中の文字・ロゴ位置(%)</p>
-          <button onclick="toggleEditGuides()" id="btnGuideToggle" class="px-2.5 py-1 bg-gray-800 border border-gray-700 hover:border-[#ceba8c] text-[10px] text-gray-300 rounded font-bold transition">編集ガイドを表示</button>
-        </div>
-
-        <div class="p-4 bg-[#181411] border border-gray-800 rounded-xl space-y-4 text-xs font-sans">
-          <div class="space-y-2 border-b border-gray-800/60 pb-3"><span class="font-bold text-gray-300 block">① 住所（a）</span><div class="grid grid-cols-4 gap-2"><div><label class="text-[8.5px] text-gray-500">X</label><input type="number" id="coordAddrX" step="0.1" class="w-full bg-[#2a2420] border border-gray-700 rounded p-1 text-center text-white"></div><div><label class="text-[8.5px] text-gray-500">Y</label><input type="number" id="coordAddrY" step="0.1" class="w-full bg-[#2a2420] border border-gray-700 rounded p-1 text-center text-white"></div><div><label class="text-[8.5px] text-gray-500">W</label><input type="number" id="coordAddrW" step="0.1" class="w-full bg-[#2a2420] border border-gray-700 rounded p-1 text-center text-white"></div><div><label class="text-[8.5px] text-gray-500">H</label><input type="number" id="coordAddrH" step="0.1" class="w-full bg-[#2a2420] border border-gray-700 rounded p-1 text-center text-white"></div></div><div class="mt-1 space-y-2"><div><label class="block text-[9px] text-gray-500">連動テキスト</label><input type="text" id="inputAddrText" class="w-full bg-[#2a2420] border border-gray-700 rounded px-2 py-1 text-[11px] text-white"></div><div><label class="block text-[9px] text-gray-500">Map URL</label><input type="text" id="inputMapUrl" class="w-full bg-[#2a2420] border border-gray-700 rounded px-2 py-1 text-[11px] text-white"></div></div></div>
-          <div class="space-y-2 border-b border-gray-800/60 pb-3"><span class="font-bold text-gray-300 block">② 代表電話（t1）</span><div class="grid grid-cols-4 gap-2"><div><label class="text-[8.5px] text-gray-500">X</label><input type="number" id="coordTelMainX" step="0.1" class="w-full bg-[#2a2420] border border-gray-700 rounded p-1 text-center text-white"></div><div><label class="text-[8.5px] text-gray-500">Y</label><input type="number" id="coordTelMainY" step="0.1" class="w-full bg-[#2a2420] border border-gray-700 rounded p-1 text-center text-white"></div><div><label class="text-[8.5px] text-gray-500">W</label><input type="number" id="coordTelMainW" step="0.1" class="w-full bg-[#2a2420] border border-gray-700 rounded p-1 text-center text-white"></div><div><label class="text-[8.5px] text-gray-500">H</label><input type="number" id="coordTelMainH" step="0.1" class="w-full bg-[#2a2420] border border-gray-700 rounded p-1 text-center text-white"></div></div><div class="mt-1"><input type="text" id="inputTelMain" class="w-full bg-[#2a2420] border border-gray-700 rounded px-2 py-1 text-[11px] text-white"></div></div>
-          <div class="space-y-2 border-b border-gray-800/60 pb-3"><span class="font-bold text-gray-300 block">③ FAX番号（f）</span><div class="grid grid-cols-4 gap-2"><div><label class="text-[8.5px] text-gray-500">X</label><input type="number" id="coordFaxX" step="0.1" class="w-full bg-[#2a2420] border border-gray-700 rounded p-1 text-center text-white"></div><div><label class="text-[8.5px] text-gray-500">Y</label><input type="number" id="coordFaxY" step="0.1" class="w-full bg-[#2a2420] border border-gray-700 rounded p-1 text-center text-white"></div><div><label class="text-[8.5px] text-gray-500">W</label><input type="number" id="coordFaxW" step="0.1" class="w-full bg-[#2a2420] border border-gray-700 rounded p-1 text-center text-white"></div><div><label class="text-[8.5px] text-gray-500">H</label><input type="number" id="coordFaxH" step="0.1" class="w-full bg-[#2a2420] border border-gray-700 rounded p-1 text-center text-white"></div></div><div class="mt-1"><input type="text" id="inputFax" class="w-full bg-[#2a2420] border border-gray-700 rounded px-2 py-1 text-[11px] text-white"></div></div>
-          <div class="space-y-2 border-b border-gray-800/60 pb-3"><span class="font-bold text-gray-300 block">④ 携帯電話（t2）</span><div class="grid grid-cols-4 gap-2"><div><label class="text-[8.5px] text-gray-500">X</label><input type="number" id="coordTelMobileX" step="0.1" class="w-full bg-[#2a2420] border border-gray-700 rounded p-1 text-center text-white"></div><div><label class="text-[8.5px] text-gray-500">Y</label><input type="number" id="coordTelMobileY" step="0.1" class="w-full bg-[#2a2420] border border-gray-700 rounded p-1 text-center text-white"></div><div><label class="text-[8.5px] text-gray-500">W</label><input type="number" id="coordTelMobileW" step="0.1" class="w-full bg-[#2a2420] border border-gray-700 rounded p-1 text-center text-white"></div><div><label class="text-[8.5px] text-gray-500">H</label><input type="number" id="coordTelMobileH" step="0.1" class="w-full bg-[#2a2420] border border-gray-700 rounded p-1 text-center text-white"></div></div><div class="mt-1"><input type="text" id="inputTelMobile" class="w-full bg-[#2a2420] border border-gray-700 rounded px-2 py-1 text-[11px] text-white"></div></div>
-          <div class="space-y-2 border-b border-gray-800/60 pb-3"><span class="font-bold text-gray-300 block">⑤ E-mail（e）</span><div class="grid grid-cols-4 gap-2"><div><label class="text-[8.5px] text-gray-500">X</label><input type="number" id="coordEmailX" step="0.1" class="w-full bg-[#2a2420] border border-gray-700 rounded p-1 text-center text-white"></div><div><label class="text-[8.5px] text-gray-500">Y</label><input type="number" id="coordEmailY" step="0.1" class="w-full bg-[#2a2420] border border-gray-700 rounded p-1 text-center text-white"></div><div><label class="text-[8.5px] text-gray-500">W</label><input type="number" id="coordEmailW" step="0.1" class="w-full bg-[#2a2420] border border-gray-700 rounded p-1 text-center text-white"></div><div><label class="text-[8.5px] text-gray-500">H</label><input type="number" id="coordEmailH" step="0.1" class="w-full bg-[#2a2420] border border-gray-700 rounded p-1 text-center text-white"></div></div><div class="mt-1"><input type="text" id="inputEmail" class="w-full bg-[#2a2420] border border-gray-700 rounded px-2 py-1 text-[11px] text-white"></div></div>
-          <div class="space-y-2 border-b border-gray-800/60 pb-3"><span class="font-bold text-gray-300 block">⑥ ロゴ位置（logo）</span><div class="grid grid-cols-4 gap-2"><div><label class="text-[8.5px] text-gray-500">X</label><input type="number" id="coordLogoX" step="0.1" class="w-full bg-[#2a2420] border border-gray-700 rounded p-1 text-center text-white"></div><div><label class="text-[8.5px] text-gray-500">Y</label><input type="number" id="coordLogoY" step="0.1" class="w-full bg-[#2a2420] border border-gray-700 rounded p-1 text-center text-white"></div><div><label class="text-[8.5px] text-gray-500">W</label><input type="number" id="coordLogoW" step="0.1" class="w-full bg-[#2a2420] border border-gray-700 rounded p-1 text-center text-white"></div><div><label class="text-[8.5px] text-gray-500">H</label><input type="number" id="coordLogoH" step="0.1" class="w-full bg-[#2a2420] border border-gray-700 rounded p-1 text-center text-white"></div></div></div>
-
-          <div class="space-y-2 pb-3">
-            <span class="font-bold text-gray-300 block">⑦ 連絡先保存用データ（全自動連携）</span>
-            <div class="grid grid-cols-2 gap-3">
-              <div><label class="text-[9px] text-gray-500">会社名</label><input type="text" id="inputCompanyName" class="w-full bg-[#2a2420] border border-gray-700 rounded px-2 py-1 text-[11px] text-white"></div>
-              <div><label class="text-[9px] text-gray-500">氏名</label><input type="text" id="inputName" class="w-full bg-[#2a2420] border border-gray-700 rounded px-2 py-1 text-[11px] text-white"></div>
-              <div><label class="text-[9px] text-gray-500">役職</label><input type="text" id="inputTitle" class="w-full bg-[#2a2420] border border-gray-700 rounded px-2 py-1 text-[11px] text-white"></div>
-              <div class="col-span-2"><label class="text-[9px] text-gray-500">WEBサイトURL</label><input type="text" id="inputWebsite" class="w-full bg-[#2a2420] border border-gray-700 rounded px-2 py-1 text-[11px] text-white"></div>
+        
+        <!-- 1. 画像とAI解析 -->
+        <div class="panel">
+          <h4 class="font-bold text-[#ceba8c] text-xs mb-3 border-b border-gray-700 pb-1">1. 画像設定 ＆ AI解析</h4>
+          <div class="space-y-3">
+            <div>
+              <label class="label">表面画像 (ファイル or URL)</label>
+              <input type="file" id="uploadFront" accept="image/*" class="text-[10px] text-gray-400 w-full mb-1">
+              <input type="text" id="inFrontUrl" class="input-field mt-0" placeholder="画像URL">
+              <input type="hidden" id="inFrontImg"> <!-- Base64保持用 -->
+            </div>
+            <div>
+              <label class="label">裏面画像 (ファイル or URL)</label>
+              <input type="file" id="uploadBack" accept="image/*" class="text-[10px] text-gray-400 w-full mb-1">
+              <input type="text" id="inBackUrl" class="input-field mt-0" placeholder="画像URL">
+              <input type="hidden" id="inBackImg">
+            </div>
+            <div>
+              <label class="label">ロゴ画像 (透過PNG)</label>
+              <input type="file" id="uploadLogo" accept="image/*" class="text-[10px] text-gray-400 w-full mb-1">
+              <input type="text" id="inLogoUrl" class="input-field mt-0" placeholder="画像URL">
+              <input type="hidden" id="inLogoImg">
+            </div>
+            <div>
+              <label class="label">Gemini APIキー (解析用)</label>
+              <div class="flex gap-2">
+                <input type="password" id="inApiKey" class="input-field mt-0" placeholder="API Key">
+                <button id="btnAiScan" class="bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 rounded font-bold whitespace-nowrap">AI解析</button>
+              </div>
+              <div id="aiLoader" class="hidden text-[10px] text-blue-400 mt-2 animate-pulse text-center">⏳ 画像内の文字と座標を解析中...</div>
             </div>
           </div>
         </div>
+
+        <!-- 2. データ入力 -->
+        <div class="panel">
+          <h4 class="font-bold text-[#ceba8c] text-xs mb-3 border-b border-gray-700 pb-1">2. 連絡先・SNSデータ</h4>
+          <div class="grid grid-cols-2 gap-3 mb-3">
+            <div><label class="label-sm">会社名</label><input type="text" id="inComp" class="input-field mt-0"></div>
+            <div><label class="label-sm">氏名</label><input type="text" id="inName" class="input-field mt-0"></div>
+            <div><label class="label-sm">役職</label><input type="text" id="inTitle" class="input-field mt-0"></div>
+            <div><label class="label-sm">代表電話</label><input type="text" id="inTel" class="input-field mt-0"></div>
+            <div><label class="label-sm">携帯電話</label><input type="text" id="inMobile" class="input-field mt-0"></div>
+            <div><label class="label-sm">FAX</label><input type="text" id="inFax" class="input-field mt-0"></div>
+            <div class="col-span-2"><label class="label-sm">Email</label><input type="text" id="inEmail" class="input-field mt-0"></div>
+            <div class="col-span-2"><label class="label-sm">住所</label><input type="text" id="inAddr" class="input-field mt-0"></div>
+            <div class="col-span-2"><label class="label-sm">Google Map URL (任意)</label><input type="text" id="inMapUrl" class="input-field mt-0" placeholder="空なら住所から自動生成"></div>
+            <div class="col-span-2"><label class="label-sm">会社HP</label><input type="text" id="inHpUrl" class="input-field mt-0"></div>
+          </div>
+          <div class="border-t border-gray-700 pt-2">
+            <label class="label">📱 SNSリンク (ガラスボタン)</label>
+            <div class="space-y-2 mt-1">
+              <input type="text" id="inX" class="input-field mt-0" placeholder="X (Twitter) URL">
+              <input type="text" id="inInsta" class="input-field mt-0" placeholder="Instagram URL">
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. エフェクト -->
+        <div class="panel">
+          <h4 class="font-bold text-[#ceba8c] text-xs mb-3 border-b border-gray-700 pb-1">3. エフェクト設定</h4>
+          <div class="grid grid-cols-2 gap-2 text-xs text-gray-300">
+            <label class="flex items-center gap-1"><input type="checkbox" id="chkEmboss" class="rounded"> 画像エンボス</label>
+            <label class="flex items-center gap-1"><input type="checkbox" id="chkPearl" class="rounded"> パールブレンド</label>
+            <label class="flex items-center gap-1"><input type="checkbox" id="chkSweep" class="rounded"> 斜め光線</label>
+            <label class="flex items-center gap-1"><input type="checkbox" id="chkBorder" class="rounded"> 枠線ネオン</label>
+          </div>
+          <div class="mt-3 flex gap-2">
+            <input type="text" id="inColor" class="input-field mt-0" value="#d4af37" placeholder="エフェクト色">
+          </div>
+        </div>
+
+        <!-- 4. タップ領域微調整 -->
+        <div class="panel">
+          <div class="flex justify-between items-center mb-3 border-b border-gray-700 pb-1">
+            <h4 class="font-bold text-[#ceba8c] text-xs">4. タップ領域の微調整</h4>
+            <button id="btnToggleGuide" class="px-2 py-1 bg-gray-800 border border-gray-600 rounded text-[10px]">編集ガイド表示</button>
+          </div>
+          <select id="selArea" class="input-field mt-0 mb-3 bg-gray-800">
+            <option value="a">📍 住所(Map) 領域</option>
+            <option value="t1">📞 代表電話 領域</option>
+            <option value="f">📠 FAX 領域</option>
+            <option value="t2">📱 携帯電話 領域</option>
+            <option value="e">✉️ メール 領域</option>
+            <option value="logo">✨ ロゴエンボス 領域</option>
+            <option value="h">🌐 裏面HP 領域</option>
+          </select>
+          <div class="flex gap-2 text-xs">
+            <div><label class="text-gray-500 text-[9px]">X%</label><input type="number" id="sl_X" step="0.1" class="input-field mt-0 text-center"></div>
+            <div><label class="text-gray-500 text-[9px]">Y%</label><input type="number" id="sl_Y" step="0.1" class="input-field mt-0 text-center"></div>
+            <div><label class="text-gray-500 text-[9px]">W%</label><input type="number" id="sl_W" step="0.1" class="input-field mt-0 text-center"></div>
+            <div><label class="text-gray-500 text-[9px]">H%</label><input type="number" id="sl_H" step="0.1" class="input-field mt-0 text-center"></div>
+          </div>
+        </div>
+
+        <!-- 5. 出力・VCF・NFC -->
+        <div class="panel bg-black border-gray-600">
+          <h4 class="font-bold text-[#d4af37] text-xs mb-3 border-b border-gray-700 pb-1">🚀 5. 出力 ＆ NFC書込</h4>
+          
+          <button id="btnExportVcfAdmin" class="w-full py-2 mb-3 bg-[#238636] hover:bg-[#2ea043] text-white text-xs font-bold rounded transition flex items-center justify-center gap-2">
+            <i class="fa-solid fa-download"></i> contact.vcf を生成してDL
+          </button>
+
+          <div class="flex gap-2 mb-3">
+            <button id="btnCopyJson" class="w-1/2 py-2 bg-gray-700 hover:bg-gray-600 text-white text-xs font-bold rounded transition">JSONコピー</button>
+            <button id="btnWriteNfc" class="w-1/2 py-2 bg-[#10b981] hover:bg-[#059669] text-white text-xs font-bold rounded transition flex items-center justify-center gap-2">
+              <i class="fa-solid fa-wifi"></i> NFC書込
+            </button>
+          </div>
+          
+          <input type="text" id="outFullUrl" class="input-field text-yellow-500 font-bold bg-[#111] text-[10px]" readonly placeholder="公開用URL (NFC書込用)">
+        </div>
+
       </div>
     </div>
   </div>
 
-  <div id="toast" class="fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-[#111] border border-[#d4af37] text-[#d4af37] px-6 py-3 rounded-full text-xs font-semibold tracking-wider hidden z-50"></div>
+  <!-- Cropper Modal -->
+  <div class="modal-overlay" id="cropModal">
+    <div style="color:#fff; margin-bottom:10px; font-weight:bold; font-size:14px;">四隅を合わせて切り抜いてください</div>
+    <div class="cropper-container-wrapper">
+      <img id="cropImage" src="">
+    </div>
+    <div style="display:flex; gap:15px;">
+      <button id="btnCropCancel" class="w-32 py-2 bg-gray-700 text-white rounded font-bold text-sm">キャンセル</button>
+      <button id="btnCropExec" class="w-32 py-2 bg-[#d4af37] text-black rounded font-bold text-sm">切り抜き確定</button>
+    </div>
+  </div>
 
+  <div id="toast"></div>
+
+  <!-- ==========================================
+       CORE LOGIC
+       ========================================== -->
   <script>
+    // --- State & Initialization ---
     let globalCardData = {};
+    const state = {
+      targetFace: 'front',
+      coords: { 
+        a: {x:0, y:0, w:0, h:0}, 
+        t1: {x:0, y:0, w:0, h:0}, 
+        f: {x:0, y:0, w:0, h:0}, 
+        t2: {x:0, y:0, w:0, h:0}, 
+        e: {x:0, y:0, w:0, h:0}, 
+        logo: {x:0, y:0, w:0, h:0},
+        h: {x:0, y:0, w:0, h:0},
+        q: {x:0, y:0, w:0, h:0} 
+      },
+      currentArea: 'a'
+    };
+    let cropper = null;
 
-    // --- 3Dカードの回転処理 ---
-    const cardContainer = document.getElementById('cardContainer');
+    function init() {
+      try {
+        const rawData = document.getElementById('gas-data').textContent.trim();
+        if (rawData) globalCardData = JSON.parse(rawData);
+      } catch(e) { console.warn("JSON Parse Error", e); }
+
+      const d = globalCardData || {};
+      
+      // Nullセーフな値セット関数
+      const setV = (id, val) => { const el = document.getElementById(id); if (el && val !== undefined) el.value = val; };
+
+      setV('inFrontImg', d.frontImg);
+      setV('inBackImg', d.backImg);
+      setV('inLogoImg', d.logoImg);
+      setV('inComp', d.companyName);
+      setV('inName', d.name);
+      setV('inTitle', d.title);
+      setV('inTel', d.tel_main);
+      setV('inMobile', d.tel_mobile);
+      setV('inFax', d.fax);
+      setV('inEmail', d.email);
+      setV('inAddr', d.address);
+      setV('inMapUrl', d.mapUrl);
+      setV('inHpUrl', d.website);
+      setV('inX', d.urlX);
+      setV('inInsta', d.urlInstagram);
+      
+      if(d.coords) {
+        ['a', 't1', 'f', 't2', 'e', 'logo', 'h', 'q'].forEach(k => {
+          if(d.coords[k]) state.coords[k] = d.coords[k];
+        });
+      }
+
+      const outUrl = document.getElementById('outFullUrl');
+      if(outUrl) outUrl.value = window.location.href.split('?')[0];
+
+      if (new URLSearchParams(window.location.search).get('admin') === 'true') {
+        const trig = document.getElementById('btnStudioTrigger');
+        if(trig) trig.classList.remove('hidden');
+      }
+
+      updateView();
+      updateSliderUI();
+      
+      // 全入力フォームのイベントリスナー設定
+      const inputIds = [
+        'inFrontUrl', 'inBackUrl', 'inLogoUrl',
+        'inComp', 'inName', 'inTitle', 'inAddr', 'inMapUrl',
+        'inTel', 'inMobile', 'inFax', 'inEmail', 'inHpUrl',
+        'inX', 'inInsta', 'inColor'
+      ];
+      inputIds.forEach(id => {
+        const el = document.getElementById(id);
+        if(el) el.addEventListener('input', updateView);
+      });
+
+      const checkboxes = ['chkEmboss', 'chkPearl', 'chkSweep', 'chkBorder'];
+      checkboxes.forEach(id => {
+        const el = document.getElementById(id);
+        if(el) el.addEventListener('change', updateView);
+      });
+
+      // スライダー連動
+      ['sl_X', 'sl_Y', 'sl_W', 'sl_H'].forEach(id => {
+        const el = document.getElementById(id);
+        if(el) el.addEventListener('input', applyCoordsFromSlider);
+      });
+
+      const selArea = document.getElementById('selArea');
+      if(selArea) {
+        selArea.addEventListener('change', e => { state.currentArea = e.target.value; updateSliderUI(); });
+      }
+    }
+
+    // --- View Update Logic ---
+    function updateView() {
+      // 1. 画像の反映
+      const getImg = (hiddenId, urlId) => document.getElementById(hiddenId)?.value || document.getElementById(urlId)?.value || "";
+      const fImg = getImg('inFrontImg', 'inFrontUrl');
+      const bImg = getImg('inBackImg', 'inBackUrl');
+      const lImg = getImg('inLogoImg', 'inLogoUrl');
+
+      const viewFront = document.getElementById('viewFrontImg');
+      if (viewFront && fImg) viewFront.src = encodeURI(fImg);
+      const viewBack = document.getElementById('viewBackImg');
+      if (viewBack && bImg) viewBack.src = encodeURI(bImg);
+      const logoFoil = document.getElementById('logoFoil');
+      if (logoFoil) {
+        if (lImg) { logoFoil.src = encodeURI(lImg); logoFoil.style.display = 'block'; }
+        else { logoFoil.style.display = 'none'; }
+      }
+
+      // 2. テキストデータの取得
+      const telMain = document.getElementById('inTel')?.value || "";
+      const telMobile = document.getElementById('inMobile')?.value || "";
+      const fax = document.getElementById('inFax')?.value || "";
+      const email = document.getElementById('inEmail')?.value || "";
+      const address = document.getElementById('inAddr')?.value || "";
+      const companyHp = document.getElementById('inHpUrl')?.value || "";
+      const inputMapUrl = document.getElementById('inMapUrl')?.value || "";
+
+      // 3. リンクの更新
+      const cleanAddr = address.replace(/〒?\d{3}-\d{4}\s*/, '').trim();
+      const mapUrl = inputMapUrl || (cleanAddr ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(cleanAddr)}` : '#');
+      
+      const linkMap = {
+        'hsAddr': mapUrl,
+        'hsTel': `tel:${telMain.replace(/[^\d-]/g, '')}`,
+        'hsFax': `tel:${fax.replace(/[^\d-]/g, '')}`,
+        'hsMobile': `tel:${telMobile.replace(/[^\d-]/g, '')}`,
+        'hsEmail': `mailto:${email.trim()}`
+      };
+      for (const [id, url] of Object.entries(linkMap)) {
+        const el = document.getElementById(id);
+        if (el) el.href = url !== 'tel:' && url !== 'mailto:' ? url : '#';
+      }
+
+      // HP & QR更新
+      const qrContainer = document.getElementById('qrContainer');
+      const hsHp = document.getElementById('hsHp');
+      if(companyHp) {
+        const safeUrl = /^https?:\/\//i.test(companyHp) ? companyHp : 'https://' + companyHp;
+        const imgQr = document.getElementById('imgQr');
+        if(imgQr) imgQr.src = `https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(safeUrl)}`;
+        
+        const webText = document.getElementById('websiteText');
+        if(webText) {
+          let dUrl = safeUrl.replace(/^https?:\/\//, '');
+          if(dUrl.endsWith('/')) dUrl = dUrl.slice(0, -1);
+          webText.textContent = dUrl;
+        }
+        if(hsHp) hsHp.href = safeUrl;
+        if(qrContainer) qrContainer.style.display = 'flex';
+      } else {
+        if(qrContainer) qrContainer.style.display = 'none';
+      }
+
+      // SNSボタン
+      const sBox = document.getElementById('socialBox');
+      if(sBox) {
+        sBox.innerHTML = '';
+        const xUrl = document.getElementById('inX')?.value;
+        const igUrl = document.getElementById('inInsta')?.value;
+        if(xUrl) sBox.innerHTML += `<a href="${xUrl}" target="_blank" class="social-glass" onclick="event.stopPropagation()"><i class="fa-brands fa-x-twitter"></i></a>`;
+        if(igUrl) sBox.innerHTML += `<a href="${igUrl}" target="_blank" class="social-glass" onclick="event.stopPropagation()"><i class="fa-brands fa-instagram"></i></a>`;
+      }
+
+      // 4. 座標CSS変数の更新
+      const applyC = (key, elId) => {
+        const c = state.coords[key];
+        const el = document.getElementById(elId);
+        if (c && el) {
+          el.style.setProperty('--el-x', c.x || 0);
+          el.style.setProperty('--el-y', c.y || 0);
+          el.style.setProperty('--el-w', c.w || 0);
+          el.style.setProperty('--el-h', c.h || 0);
+        }
+      };
+      applyC('a', 'hsAddr');
+      applyC('t1', 'hsTel');
+      applyC('f', 'hsFax');
+      applyC('t2', 'hsMobile');
+      applyC('e', 'hsEmail');
+      applyC('logo', 'logoFoil');
+      applyC('h', 'hsHp');
+
+      // 5. エフェクト更新
+      const rootF = document.getElementById('cardFront');
+      const rootB = document.getElementById('cardBack');
+      const emboss = document.getElementById('chkEmboss')?.checked;
+      const pearl = document.getElementById('chkPearl')?.checked;
+      const sweep = document.getElementById('chkSweep')?.checked;
+      const border = document.getElementById('chkBorder')?.checked;
+      const color = document.getElementById('inColor')?.value || '#d4af37';
+      
+      document.documentElement.style.setProperty('--effect-color', color);
+
+      [rootF, rootB].forEach(el => {
+        if(!el) return;
+        el.classList.toggle('has-emboss', !!emboss);
+        el.classList.toggle('has-pearl', !!pearl);
+        el.classList.toggle('has-sweep', !!sweep);
+        el.classList.toggle('has-border', !!border);
+      });
+    }
+
+    // --- Slider & Coords ---
+    function updateSliderUI() {
+      const c = state.coords[state.currentArea] || {x:0, y:0, w:0, h:0};
+      const setV = (id, v) => { const el = document.getElementById(id); if(el) el.value = v; };
+      setV('sl_X', c.x); setV('sl_Y', c.y); setV('sl_W', c.w); setV('sl_H', c.h);
+    }
+
+    function applyCoordsFromSlider() {
+      const x = document.getElementById('sl_X')?.value || 0;
+      const y = document.getElementById('sl_Y')?.value || 0;
+      const w = document.getElementById('sl_W')?.value || 0;
+      const h = document.getElementById('sl_H')?.value || 0;
+      state.coords[state.currentArea] = {x:Number(x), y:Number(y), w:Number(w), h:Number(h)};
+      updateView();
+    }
+
+    // --- 3D Animation ---
     const cardTilt = document.getElementById('cardTilt'); 
     let currentX = 0, currentY = 0, targetX = 0, targetY = 0;
 
-    function runCardAnimationLoop() {
-      currentX += (targetX - currentX) * 0.1;
-      currentY += (targetY - currentY) * 0.1;
-      cardTilt.style.transform = `rotateX(${-currentY * 11}deg) rotateY(${currentX * 11}deg)`;
-      requestAnimationFrame(runCardAnimationLoop);
-    }
-    requestAnimationFrame(runCardAnimationLoop);
-
-    document.addEventListener('mousemove', function(e) {
-      const cx = window.innerWidth / 2;
-      const cy = window.innerHeight / 2;
-      targetX = (e.clientX - cx) / cx;
-      targetY = (e.clientY - cy) / cy;
-    });
-    document.addEventListener('mouseleave', function() { targetX = 0; targetY = 0; });
-
-    let isFlipped = false;
-    let isFlippingNow = false;
-    
-    // 👑 修正: 誤タップによる名刺回転防止（イベントバブリング遮断）
-    cardContainer.addEventListener('click', function(e) {
-      // 透明ホットスポットなどのリンク要素がタップされた場合は回転させない
-      if (e.target.closest('a') || e.target.closest('.coord-target')) {
-        return;
+    function animLoop() {
+      if(cardTilt) {
+        currentX += (targetX - currentX) * 0.1;
+        currentY += (targetY - currentY) * 0.1;
+        cardTilt.style.transform = `rotateX(${-currentY * 11}deg) rotateY(${currentX * 11}deg)`;
       }
-      
-      if (isFlippingNow) return;
-      isFlippingNow = true;
-      isFlipped = !isFlipped;
-      
-      cardContainer.classList.toggle('is-flipped', isFlipped);
-      document.getElementById('btnFlipText').textContent = isFlipped ? "表面を表示する（タップ回転）" : "裏面を表示する（タップ回転）";
+      requestAnimationFrame(animLoop);
+    }
+    requestAnimationFrame(animLoop);
 
-      const front = document.getElementById('cardFront');
-      const back = document.getElementById('cardBack');
-
-      setTimeout(() => {
-        if (isFlipped) {
-          front.style.pointerEvents = 'none';
-          back.style.pointerEvents = 'auto'; 
-        } else {
-          back.style.pointerEvents = 'none';
-          front.style.pointerEvents = 'auto'; 
-        }
-      }, 300);
-      setTimeout(() => { isFlippingNow = false; }, 600);
-    });
-
-    function flipCardFromBtn() {
-      if (isFlippingNow) return;
-      isFlippingNow = true;
-      isFlipped = !isFlipped;
-      cardContainer.classList.toggle('is-flipped', isFlipped);
-      document.getElementById('btnFlipText').textContent = isFlipped ? "表面を表示する（タップ回転）" : "裏面を表示する（タップ回転）";
-      const front = document.getElementById('cardFront');
-      const back = document.getElementById('cardBack');
-      setTimeout(() => {
-        if (isFlipped) {
-          front.style.pointerEvents = 'none';
-          back.style.pointerEvents = 'auto'; 
-        } else {
-          back.style.pointerEvents = 'none';
-          front.style.pointerEvents = 'auto'; 
-        }
-      }, 300);
-      setTimeout(() => { isFlippingNow = false; }, 600);
+    const cardStage = document.getElementById('cardStage');
+    if(cardStage) {
+      cardStage.addEventListener('mousemove', e => {
+        const cx = window.innerWidth / 2, cy = window.innerHeight / 2;
+        targetX = (e.clientX - cx) / cx; targetY = (e.clientY - cy) / cy;
+      });
+      cardStage.addEventListener('mouseleave', () => { targetX = 0; targetY = 0; });
     }
 
-    // 👑 アプリ内ブラウザ（LINE等）のブロック回避用フォールバック
+    // --- Flip Logic (iOS 3D Bug Fix) ---
+    const cardContainer = document.getElementById('cardContainer');
+    let isFlipped = false, isFlippingNow = false;
+    
+    function doFlip(e) {
+      // aタグやホットスポットのタップならフリップしない
+      if (e && e.target && (e.target.closest('a') || e.target.closest('.coord-target'))) return; 
+      if (isFlippingNow || !cardContainer) return;
+      
+      isFlippingNow = true; isFlipped = !isFlipped;
+      cardContainer.classList.toggle('is-flipped', isFlipped);
+      
+      const btnTxt = document.getElementById('btnFlipText');
+      if(btnTxt) btnTxt.textContent = isFlipped ? "表面を表示する（タップ回転）" : "裏面を表示する（タップ回転）";
+
+      const front = document.getElementById('cardFront'), back = document.getElementById('cardBack');
+      setTimeout(() => {
+        if(front && back) {
+          if (isFlipped) {
+            front.style.visibility = 'hidden'; front.style.pointerEvents = 'none';
+            back.style.visibility = 'visible'; back.style.pointerEvents = 'auto'; 
+          } else {
+            back.style.visibility = 'hidden'; back.style.pointerEvents = 'none';
+            front.style.visibility = 'visible'; front.style.pointerEvents = 'auto'; 
+          }
+        }
+        isFlippingNow = false;
+      }, 300);
+    }
+    if(cardContainer) cardContainer.addEventListener('click', doFlip);
+    const btnFlipExternal = document.getElementById('btnFlipExternal');
+    if(btnFlipExternal) btnFlipExternal.addEventListener('click', () => doFlip(null));
+
+    // --- Studio Panel Toggle ---
+    const studioPanel = document.getElementById('studioPanel');
+    document.getElementById('btnStudioTrigger')?.addEventListener('click', () => {
+      studioPanel?.classList.remove('hidden'); studioPanel?.classList.add('flex');
+    });
+    document.getElementById('btnCloseStudio')?.addEventListener('click', () => {
+      studioPanel?.classList.add('hidden'); studioPanel?.classList.remove('flex');
+    });
+
+    document.getElementById('btnToggleGuide')?.addEventListener('click', () => {
+      document.body.classList.toggle('edit-mode-active');
+    });
+
+    // --- Cropper.js ---
+    function openCropper(file, face) {
+      state.targetFace = face;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        document.getElementById('cropImage').src = e.target.result;
+        document.getElementById('cropModal').classList.add('is-active');
+        if(cropper) cropper.destroy();
+        cropper = new Cropper(document.getElementById('cropImage'), { aspectRatio: 91/55, viewMode: 1, autoCropArea: 1, background: false });
+      };
+      reader.readAsDataURL(file);
+    }
+    document.getElementById('uploadFront')?.addEventListener('change', e => { if(e.target.files[0]) openCropper(e.target.files[0], 'front'); });
+    document.getElementById('uploadBack')?.addEventListener('change', e => { if(e.target.files[0]) openCropper(e.target.files[0], 'back'); });
+    document.getElementById('uploadLogo')?.addEventListener('change', e => { if(e.target.files[0]) openCropper(e.target.files[0], 'logo'); });
+
+    document.getElementById('btnCropCancel')?.addEventListener('click', () => {
+      document.getElementById('cropModal').classList.remove('is-active');
+    });
+    document.getElementById('btnCropExec')?.addEventListener('click', () => {
+      if(!cropper) return;
+      const canvas = cropper.getCroppedCanvas({ width: 1000, imageSmoothingQuality: 'high' });
+      const b64 = canvas.toDataURL('image/png', 0.85); // ロゴの透過維持のためpng
+      
+      if(state.targetFace === 'front') { document.getElementById('inFrontImg').value = b64; }
+      else if(state.targetFace === 'back') { document.getElementById('inBackImg').value = b64; }
+      else if(state.targetFace === 'logo') { document.getElementById('inLogoImg').value = b64; }
+      
+      document.getElementById('cropModal').classList.remove('is-active');
+      updateView();
+      showToast("画像を切り抜きました");
+    });
+
+    // --- Gemini AI ---
+    async function fetchWithBackoff(url, payload) {
+      let delay = 1000;
+      for (let i = 0; i < 3; i++) {
+        try {
+          const res = await fetch(url, { method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(payload) });
+          if (res.ok) return await res.json();
+        } catch(e) { console.warn("Retry API..."); }
+        await new Promise(r => setTimeout(r, delay)); delay *= 2;
+      }
+      throw new Error("API Timeout");
+    }
+
+    document.getElementById('btnAiScan')?.addEventListener('click', async () => {
+      const apiKey = document.getElementById('inApiKey')?.value;
+      if(!apiKey) { showToast("APIキーを入力してください"); return; }
+      
+      const b64Full = document.getElementById('inFrontImg')?.value || document.getElementById('inFrontUrl')?.value;
+      if(!b64Full || !b64Full.startsWith('data:')) { showToast("AI解析には画像をローカルからアップロードしてください"); return; }
+      
+      const b64 = b64Full.split(',')[1];
+      const loader = document.getElementById('aiLoader'); if(loader) loader.classList.remove('hidden');
+
+      const prompt = `名刺からテキストと位置を抽出。位置(x,y,w,h)は画像全体を100としたパーセント。`;
+      const payload = {
+        contents: [{ parts: [{ text: prompt }, { inlineData: { mimeType: "image/jpeg", data: b64 } }] }],
+        systemInstruction: { parts: [{ text: "Output strictly structured JSON." }] },
+        generationConfig: {
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: "OBJECT",
+            properties: {
+              companyName: {type:"STRING"}, name: {type:"STRING"}, title: {type:"STRING"},
+              address: {type:"OBJECT", properties: {text:{type:"STRING"}, x:{type:"NUMBER"}, y:{type:"NUMBER"}, w:{type:"NUMBER"}, h:{type:"NUMBER"}}},
+              tel: {type:"OBJECT", properties: {text:{type:"STRING"}, x:{type:"NUMBER"}, y:{type:"NUMBER"}, w:{type:"NUMBER"}, h:{type:"NUMBER"}}},
+              email: {type:"OBJECT", properties: {text:{type:"STRING"}, x:{type:"NUMBER"}, y:{type:"NUMBER"}, w:{type:"NUMBER"}, h:{type:"NUMBER"}}}
+            }
+          }
+        }
+      };
+
+      try {
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+        const data = await fetchWithBackoff(url, payload);
+        const res = JSON.parse(data.candidates[0].content.parts[0].text);
+        
+        const setV = (id, val) => { const el = document.getElementById(id); if(el && val) el.value = val; };
+        setV('inComp', res.companyName); setV('inName', res.name); setV('inTitle', res.title);
+        
+        if(res.address?.text) { setV('inAddr', res.address.text); if(res.address.w) state.coords.a = {x:res.address.x, y:res.address.y, w:res.address.w, h:res.address.h}; }
+        if(res.tel?.text) { setV('inTel', res.tel.text); if(res.tel.w) state.coords.t1 = {x:res.tel.x, y:res.tel.y, w:res.tel.w, h:res.tel.h}; }
+        if(res.email?.text) { setV('inEmail', res.email.text); if(res.email.w) state.coords.e = {x:res.email.x, y:res.email.y, w:res.email.w, h:res.email.h}; }
+        
+        updateView(); updateSliderUI(); showToast("✅ AI解析完了");
+      } catch(e) { showToast("❌ 解析失敗"); console.error(e); } finally { if(loader) loader.classList.add('hidden'); }
+    });
+
+    // --- 👑 vCard (連絡先保存) Core Logic ---
     function checkAppBrowser() {
       const ua = navigator.userAgent.toLowerCase();
       const isAppBrowser = /line|micromessenger|instagram|facebook|fbav|fban|twitter|yahoojapan/.test(ua);
@@ -392,206 +836,129 @@
       return false;
     }
 
-    // 👑 GitHub Pages完成版: VCF自動生成＆直接連絡先起動
-    function downloadVCard(e) {
-      if(e) e.preventDefault();
+    function generateVCardString() {
+      const org = document.getElementById('inComp')?.value || "";
+      const name = document.getElementById('inName')?.value || "";
+      const title = document.getElementById('inTitle')?.value || "";
+      const telMain = document.getElementById('inTel')?.value || "";
+      const telMobile = document.getElementById('inMobile')?.value || "";
+      const fax = document.getElementById('inFax')?.value || "";
+      const email = document.getElementById('inEmail')?.value || "";
+      const address = document.getElementById('inAddr')?.value || "";
+      const companyHp = document.getElementById('inHpUrl')?.value || "";
+      
+      const myCardUrl = document.getElementById('outFullUrl')?.value || window.location.href.split('?')[0]; 
+      const cleanAddr = address.replace(/〒?\d{3}-\d{4}\s*/, '').trim();
+      const mapUrl = document.getElementById('inMapUrl')?.value || (cleanAddr ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(cleanAddr)}` : "");
 
-      if (checkAppBrowser()) return;
-
-      const d = globalCardData || {};
-
-      const org = document.getElementById('inputCompanyName').value || d.companyName || "";
-      const name = document.getElementById('inputName').value || d.name || "";
-      const title = document.getElementById('inputTitle').value || d.title || "";
-      const telMain = document.getElementById('inputTelMain').value || d.tel_main || "";
-      const telMobile = document.getElementById('inputTelMobile').value || d.tel_mobile || "";
-      const fax = document.getElementById('inputFax').value || d.fax || "";
-      const email = document.getElementById('inputEmail').value || d.email || "";
-      const address = document.getElementById('inputAddrText').value || d.address || "";
-      const companyHp = document.getElementById('inputWebsite').value || d.website || "";
-      const mapUrl = document.getElementById('inputMapUrl').value || d.mapUrl || "";
-
-      const profileUrl = window.location.href.split('?')[0];
-
-      const vcf = [
-        'BEGIN:VCARD',
-        'VERSION:3.0',
+      const vCardLines = [
+        "BEGIN:VCARD",
+        "VERSION:3.0",
         `N:;${name};;;`,
         `FN:${name}`,
         `ORG:${org}`,
         `TITLE:${title}`,
-        `TEL;TYPE=WORK:${telMain}`,
-        `TEL;TYPE=CELL:${telMobile}`,
-        `TEL;TYPE=FAX:${fax}`,
-        `EMAIL;TYPE=INTERNET:${email}`,
-        `ADR;TYPE=WORK:;;${address};;;;日本`,
+        `TEL;TYPE=WORK,VOICE:${telMain.replace(/[^\d+()]/g, '')}`,
+        `TEL;TYPE=CELL:${telMobile.replace(/[^\d+()]/g, '')}`,
+        `TEL;TYPE=FAX:${fax.replace(/[^\d+()]/g, '')}`,
+        `EMAIL:${email}`,
+        `ADR:;;${address};;;;日本`,
         `URL:${companyHp}`,
-        `URL;TYPE=MAP:${mapUrl}`,
-        `URL;TYPE=PROFILE:${profileUrl}`,
-        `NOTE:【デジタル名刺】\\n${profileUrl}\\n\\n【GoogleMap】\\n${mapUrl}\\n\\n【会社HP】\\n${companyHp}`,
-        'END:VCARD'
-      ].join('\r\n');
+        `URL;TYPE=MAP:${mapUrl}`, 
+        `URL;TYPE=PROFILE:${myCardUrl}`, 
+        `NOTE:【デジタル名刺】\\n${myCardUrl}\\n\\n【Google Map】\\n${mapUrl}\\n\\n【会社HP】\\n${companyHp}`,
+        "END:VCARD"
+      ];
+      return { str: vCardLines.join('\r\n'), name: name, org: org };
+    }
+
+    // 👑 公開画面用：連絡先保存アクション（iOS直通 DataURI ＆ Blob DL）
+    document.getElementById('btnDownloadVCard')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      if (checkAppBrowser()) return;
+
+      const vcardData = generateVCardString();
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
       try {
-        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-
         if (isIOS) {
-          // 👑 iOS専用：ファイル保存(ダウンロード)を避け、連絡先アプリを直接開く
-          const utf8str = '\uFEFF' + vcf;
+          // iOS Safariのダウンロードブロックを回避するData URI直接遷移
+          const utf8str = '\uFEFF' + vcardData.str;
           const b64 = btoa(unescape(encodeURIComponent(utf8str)));
           window.location.href = 'data:text/vcard;charset=utf-8;base64,' + b64;
         } else {
-          // 👑 Android/PC：通常のファイルダウンロード
+          // Android / PC 用ファイルダウンロード
           const bom = new Uint8Array([0xEF, 0xBB, 0xBF]);
-          const blob = new Blob([bom, vcf], { type: 'text/vcard;charset=utf-8' });
+          const blob = new Blob([bom, vcardData.str], { type: "text/vcard;charset=utf-8" });
           const url = URL.createObjectURL(blob);
           const a = document.createElement('a');
-
+          a.style.display = 'none';
           a.href = url;
-          a.download = `${name || 'contact'}.vcf`;
-          
+          a.download = `${vcardData.org}_${vcardData.name}.vcf`.replace(/\s/g, '');
           document.body.appendChild(a);
           a.click();
-
-          setTimeout(() => {
-            URL.revokeObjectURL(url);
-            document.body.removeChild(a);
-          }, 1000);
-
-          showToast('連絡先ファイルをダウンロードしました。開いて保存してください。');
+          setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 1000);
+          showToast("連絡先をダウンロードしました。ファイルを開いて保存してください。");
         }
-      } catch(err) {
+      } catch (err) {
         console.error(err);
-        alert('連絡先の生成に失敗しました');
+        alert("連絡先の生成に失敗しました。");
       }
-    }
+    });
 
-    // 👑 データを一箇所に集約し、名刺のリンクを同期する処理
-    function syncStudioToView() {
-      const fImg = document.getElementById('inputFrontImgUrl').value.trim();
-      const bImg = document.getElementById('inputBackImgUrl').value.trim();
-      const lImg = document.getElementById('inputLogoImgUrl').value.trim();
-      
-      if (fImg !== "") { document.getElementById('viewFrontImg').src = encodeURI(fImg); }
-      if (bImg !== "") { document.getElementById('viewBackImg').src = encodeURI(bImg); }
-      
-      const logoFoil = document.getElementById('logoFoil');
-      if (lImg !== "") {
-        logoFoil.src = encodeURI(lImg);
-        logoFoil.style.display = 'block';
-      } else {
-        logoFoil.style.display = 'none';
-      }
-
-      const applyCoord = (elId, prefix) => {
-        const el = document.getElementById(elId);
-        if(el) {
-          el.style.setProperty('--el-x', document.getElementById(`coord${prefix}X`).value);
-          el.style.setProperty('--el-y', document.getElementById(`coord${prefix}Y`).value);
-          el.style.setProperty('--el-w', document.getElementById(`coord${prefix}W`).value);
-          el.style.setProperty('--el-h', document.getElementById(`coord${prefix}H`).value);
-        }
-      };
-      
-      applyCoord('linkAddr', 'Addr');
-      applyCoord('linkTelMain', 'TelMain');
-      applyCoord('linkFax', 'Fax');
-      applyCoord('linkTelMobile', 'TelMobile');
-      applyCoord('linkEmail', 'Email');
-      applyCoord('logoFoil', 'Logo');
-
-      const mapInput = document.getElementById('inputMapUrl').value;
-      const addrInput = document.getElementById('inputAddrText').value;
-      const linkAddr = document.getElementById('linkAddr');
-      linkAddr.href = mapInput ? mapInput : (addrInput ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(addrInput.replace(/〒?\d{3}-\d{4}\s*/, '').trim())}` : '#');
-      
-      document.getElementById('linkTelMain').href = `tel:${document.getElementById('inputTelMain').value.replace(/[^\d-]/g, '')}`;
-      document.getElementById('linkFax').href = `tel:${document.getElementById('inputFax').value.replace(/[^\d-]/g, '')}`;
-      document.getElementById('linkTelMobile').href = `tel:${document.getElementById('inputTelMobile').value.replace(/[^\d-]/g, '')}`;
-      document.getElementById('linkEmail').href = `mailto:${document.getElementById('inputEmail').value.trim()}`;
-
-      const webUrl = document.getElementById('inputWebsite').value;
-      if(webUrl) {
-        const safeUrl = /^https?:\/\//i.test(webUrl) ? webUrl : 'https://' + webUrl;
-        document.getElementById('qrCode').src = "https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=" + encodeURIComponent(safeUrl);
-        
-        let displayUrl = safeUrl.replace(/^https?:\/\//, '');
-        if(displayUrl.endsWith('/')) displayUrl = displayUrl.slice(0, -1);
-        document.getElementById('websiteText').textContent = displayUrl;
-        
-        const webBack = document.getElementById('linkWeb');
-        webBack.style.setProperty('--el-x', 2);  
-        webBack.style.setProperty('--el-y', 85); 
-        webBack.style.setProperty('--el-w', 30); 
-        webBack.style.setProperty('--el-h', 10);  
-        webBack.href = safeUrl;
-        
-        document.getElementById('qrContainer').style.display = 'flex';
-        webBack.style.display = 'block';
-      } else {
-        document.getElementById('qrContainer').style.display = 'none';
-        document.getElementById('linkWeb').style.display = 'none';
-      }
-
-      const rootF = document.getElementById('cardFront');
-      const rootB = document.getElementById('cardBack');
-      rootF.classList.toggle('has-sweep-shine', document.getElementById('toggleSweepShine').checked);
-      rootB.classList.toggle('has-sweep-shine', document.getElementById('toggleSweepShine').checked);
-      document.body.classList.toggle('has-border-sweep', document.getElementById('toggleBorderSweep').checked);
-      rootF.classList.toggle('has-emboss-filter', document.getElementById('toggleEmboss').checked);
-    }
-
-    function init() {
+    // 👑 スタジオ画面用：contact.vcf 生成 (GitHub配置用)
+    document.getElementById('btnExportVcfAdmin')?.addEventListener('click', () => {
+      const vcardData = generateVCardString();
       try {
-        const rawData = document.getElementById('gas-data').textContent.trim();
-        if (rawData) globalCardData = JSON.parse(rawData);
-      } catch(e) { console.warn("JSON Parse Error", e); }
-
-      const d = globalCardData;
-      if (Object.keys(d).length > 0) {
-        const setVal = (id, val) => { if(val !== undefined) document.getElementById(id).value = val; };
-        setVal('inputFrontImgUrl', d.frontImg);
-        setVal('inputBackImgUrl', d.backImg);
-        setVal('inputLogoImgUrl', d.logoImg);
-        setVal('inputCompanyName', d.companyName);
-        setVal('inputName', d.name);
-        setVal('inputTitle', d.title);
-        setVal('inputAddrText', d.address);
-        setVal('inputMapUrl', d.mapUrl);
-        setVal('inputTelMain', d.tel_main);
-        setVal('inputFax', d.fax);
-        setVal('inputTelMobile', d.tel_mobile);
-        setVal('inputEmail', d.email);
-        setVal('inputWebsite', d.website);
+        const bom = new Uint8Array([0xEF, 0xBB, 0xBF]);
+        const blob = new Blob([bom, vcardData.str], { type: "text/vcard" });
+        const url = window.URL.createObjectURL(blob);
         
-        if(d.coords) {
-          const mapC = (key, prefix) => {
-            if(d.coords[key]) {
-              setVal(`coord${prefix}X`, d.coords[key].x);
-              setVal(`coord${prefix}Y`, d.coords[key].y);
-              setVal(`coord${prefix}W`, d.coords[key].w);
-              setVal(`coord${prefix}H`, d.coords[key].h);
-            }
-          };
-          mapC('a', 'Addr');
-          mapC('t1', 'TelMain');
-          mapC('f', 'Fax');
-          mapC('t2', 'TelMobile');
-          mapC('e', 'Email');
-          mapC('logo', 'Logo');
-        }
+        // 直リンク遷移方式
+        window.location.href = url;
+        
+        setTimeout(() => window.URL.revokeObjectURL(url), 5000);
+        showToast("contact.vcf を生成しました。GitHubへアップロードしてください。");
+      } catch (err) {
+        console.error(err); alert("生成に失敗しました。");
       }
+    });
 
-      syncStudioToView();
+    // --- JSON Export & NFC ---
+    document.getElementById('btnCopyJson')?.addEventListener('click', () => {
+      const getV = id => document.getElementById(id)?.value || "";
+      const data = {
+        companyName: getV('inComp'), name: getV('inName'), title: getV('inTitle'),
+        tel_main: getV('inTel'), tel_mobile: getV('inMobile'), fax: getV('inFax'),
+        email: getV('inEmail'), address: getV('inAddr'), mapUrl: getV('inMapUrl'), website: getV('inHpUrl'),
+        urlX: getV('inX'), urlInstagram: getV('inInsta'),
+        frontImg: getV('inFrontImg') || getV('inFrontUrl'),
+        backImg: getV('inBackImg') || getV('inBackUrl'),
+        logoImg: getV('inLogoImg') || getV('inLogoUrl'),
+        coords: state.coords,
+        emboss: document.getElementById('chkEmboss')?.checked, pearl: document.getElementById('chkPearl')?.checked,
+        border: document.getElementById('chkBorder')?.checked, sweep: document.getElementById('chkSweep')?.checked,
+        effectColor: getV('inColor')
+      };
+      const str = JSON.stringify(data);
+      navigator.clipboard.writeText(str).then(()=>showToast("JSONをコピーしました")).catch(()=>showToast("コピー失敗"));
+    });
 
-      if (new URLSearchParams(window.location.search).get('admin') === 'true') {
-        document.getElementById('btnStudioTrigger').classList.remove('hidden');
-      }
+    document.getElementById('btnWriteNfc')?.addEventListener('click', async () => {
+      const url = document.getElementById('outFullUrl')?.value;
+      if (!url) { showToast("公開URLがありません"); return; }
+      if ('NDEFReader' in window) {
+        try {
+          const ndef = new NDEFReader(); await ndef.write({ records: [{ recordType: "url", data: url }] });
+          showToast("✅ NFCに書き込みました");
+        } catch(e) { showToast("❌ NFC書込失敗"); }
+      } else { showToast("⚠ NFC未対応ブラウザです"); }
+    });
 
-      const inputs = document.querySelectorAll('#studioPanel input');
-      inputs.forEach(input => {
-        input.addEventListener('input', syncStudioToView);
-      });
+    function showToast(msg) {
+      const t = document.getElementById('toast'); if(!t) return;
+      t.textContent = msg; t.style.display = 'block';
+      setTimeout(() => t.style.display = 'none', 3000);
     }
 
     window.onload = init;
