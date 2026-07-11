@@ -528,8 +528,9 @@
         `EMAIL:${email}`,
         `ADR:;;${address};;;;日本`,
         `URL:${companyHp}`,
-        `URL:${myCardUrl}`, 
-        `NOTE:【デジタル名刺を開く】\\n${myCardUrl}\\n\\n【Google Mapで開く】\\n${mapUrl}`,
+        `URL;TYPE=MAP:${mapUrl}`, 
+        `URL;TYPE=PROFILE:${myCardUrl}`, 
+        `NOTE:【デジタル名刺を開く】\\n${myCardUrl}\\n\\n【Google Mapで開く】\\n${mapUrl}\\n\\n【会社HP】\\n${companyHp}`,
         "END:VCARD"
       ];
       
