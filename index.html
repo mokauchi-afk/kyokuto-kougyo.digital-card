@@ -132,9 +132,11 @@
     .custom-scrollbar::-webkit-scrollbar { width: 6px; }
     .custom-scrollbar::-webkit-scrollbar-track { background: #110f0d; }
     .custom-scrollbar::-webkit-scrollbar-thumb { background: #33281e; border-radius: 3px; }
+    
+    #toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #111; border: 1px solid #d4af37; color: #d4af37; padding: 12px 24px; border-radius: 30px; font-size: 13px; z-index: 9999; display: none; white-space: nowrap; box-shadow: 0 4px 12px rgba(0,0,0,0.5);}
   </style>
 
-  <!-- 初期データ JSON -->
+  <!-- 初期データ JSON (情報を一箇所にまとめた唯一のデータソース) -->
   <script id="gas-data" type="application/json">
   {
     "companyName": "極東興業株式会社",
@@ -186,11 +188,11 @@
 
             <div class="card-inner-targets">
               <!-- 全てのリンク用ホットスポット -->
-              <a id="linkAddr" href="#" target="_blank" rel="noopener noreferrer" class="coord-target" onclick="event.stopPropagation()"></a>
-              <a id="linkTelMain" href="#" class="coord-target" onclick="event.stopPropagation()"></a>
-              <a id="linkFax" href="#" class="coord-target" onclick="event.stopPropagation()"></a>
-              <a id="linkTelMobile" href="#" class="coord-target" onclick="event.stopPropagation()"></a>
-              <a id="linkEmail" href="#" class="coord-target" onclick="event.stopPropagation()"></a>
+              <a id="linkAddr" href="#" target="_blank" rel="noopener noreferrer" class="coord-target"></a>
+              <a id="linkTelMain" href="#" class="coord-target"></a>
+              <a id="linkFax" href="#" class="coord-target"></a>
+              <a id="linkTelMobile" href="#" class="coord-target"></a>
+              <a id="linkEmail" href="#" class="coord-target"></a>
               
               <!-- エンボスロゴ画像 -->
               <img id="logoFoil" src="" class="foil-logo" alt="ロゴ" onerror="this.style.display='none';">
@@ -218,7 +220,7 @@
             </div>
 
             <!-- 裏面のWEBサイトへのリンク領域 -->
-            <a id="linkWeb" href="#" target="_blank" rel="noopener" class="coord-target" onclick="event.stopPropagation()"></a>
+            <a id="linkWeb" href="#" target="_blank" rel="noopener" class="coord-target"></a>
           </div>
 
         </div>
@@ -233,7 +235,7 @@
         <span id="btnFlipText">裏面を表示する（タップ回転）</span>
       </button>
 
-      <!-- 👑 【究極の自動生成アプローチ】404エラーを完全に排除し、その場でVCFを作って遷移させる -->
+      <!-- 👑 連絡先を保存ボタン -->
       <a href="#" onclick="downloadVCard(event)" class="w-full py-3.5 bg-gradient-to-r from-[#211a13] via-[#120e0a] to-[#211a13] text-[#ceba8c] border border-[#6b5842] rounded-lg font-serif tracking-[0.2em] text-xs flex items-center justify-center gap-2 shadow-xl hover:border-[#8e765a] hover:text-white transition active:scale-[0.97] duration-150 relative z-20">
         <i class="fa-solid fa-address-card"></i>
         連絡先を保存
@@ -288,7 +290,7 @@
           <div class="space-y-2 border-b border-gray-800/60 pb-3"><span class="font-bold text-gray-300 block">⑥ ロゴ位置（logo）</span><div class="grid grid-cols-4 gap-2"><div><label class="text-[8.5px] text-gray-500">X</label><input type="number" id="coordLogoX" step="0.1" class="w-full bg-[#2a2420] border border-gray-700 rounded p-1 text-center text-white"></div><div><label class="text-[8.5px] text-gray-500">Y</label><input type="number" id="coordLogoY" step="0.1" class="w-full bg-[#2a2420] border border-gray-700 rounded p-1 text-center text-white"></div><div><label class="text-[8.5px] text-gray-500">W</label><input type="number" id="coordLogoW" step="0.1" class="w-full bg-[#2a2420] border border-gray-700 rounded p-1 text-center text-white"></div><div><label class="text-[8.5px] text-gray-500">H</label><input type="number" id="coordLogoH" step="0.1" class="w-full bg-[#2a2420] border border-gray-700 rounded p-1 text-center text-white"></div></div></div>
 
           <div class="space-y-2 pb-3">
-            <span class="font-bold text-gray-300 block">⑦ 名刺テキスト情報（vCard用）</span>
+            <span class="font-bold text-gray-300 block">⑦ 連絡先保存用データ（全自動連携）</span>
             <div class="grid grid-cols-2 gap-3">
               <div><label class="text-[9px] text-gray-500">会社名</label><input type="text" id="inputCompanyName" class="w-full bg-[#2a2420] border border-gray-700 rounded px-2 py-1 text-[11px] text-white"></div>
               <div><label class="text-[9px] text-gray-500">氏名</label><input type="text" id="inputName" class="w-full bg-[#2a2420] border border-gray-700 rounded px-2 py-1 text-[11px] text-white"></div>
@@ -298,15 +300,6 @@
           </div>
         </div>
       </div>
-      
-      <!-- 管理者向けVCFエクスポート機能は維持 -->
-      <div class="panel bg-gray-900 border-gray-700 mt-6 p-4 rounded-xl">
-        <h3 class="font-bold mb-3 text-[#d4af37]">📇 管理者用ツール</h3>
-        <button id="btnExportVcf" class="w-full py-2 bg-[#238636] hover:bg-[#2ea043] text-white font-bold rounded transition">
-          <i class="fa-solid fa-download mr-1"></i> (バックアップ用) vCardをダウンロード
-        </button>
-      </div>
-
     </div>
   </div>
 
@@ -339,13 +332,11 @@
     let isFlipped = false;
     let isFlippingNow = false;
     
-    // 👑 名刺フリップ時の誤作動防止（バブリングの遮断）
-    function flipCard(e) {
-      // リンクやホットスポットをタップした場合はフリップさせない
-      if (e && e.target) {
-        if (e.target.tagName.toLowerCase() === 'a' || e.target.closest('.coord-target')) {
-          return;
-        }
+    // 👑 修正: 誤タップによる名刺回転防止（イベントバブリング遮断）
+    cardContainer.addEventListener('click', function(e) {
+      // 透明ホットスポットなどのリンク要素がタップされた場合は回転させない
+      if (e.target.closest('a') || e.target.closest('.coord-target')) {
+        return;
       }
       
       if (isFlippingNow) return;
@@ -368,9 +359,28 @@
         }
       }, 300);
       setTimeout(() => { isFlippingNow = false; }, 600);
+    });
+
+    function flipCardFromBtn() {
+      if (isFlippingNow) return;
+      // ... （上の処理と同じ）
+      isFlippingNow = true;
+      isFlipped = !isFlipped;
+      cardContainer.classList.toggle('is-flipped', isFlipped);
+      document.getElementById('btnFlipText').textContent = isFlipped ? "表面を表示する（タップ回転）" : "裏面を表示する（タップ回転）";
+      const front = document.getElementById('cardFront');
+      const back = document.getElementById('cardBack');
+      setTimeout(() => {
+        if (isFlipped) {
+          front.style.pointerEvents = 'none';
+          back.style.pointerEvents = 'auto'; 
+        } else {
+          back.style.pointerEvents = 'none';
+          front.style.pointerEvents = 'auto'; 
+        }
+      }, 300);
+      setTimeout(() => { isFlippingNow = false; }, 600);
     }
-    cardContainer.addEventListener('click', flipCard);
-    function flipCardFromBtn() { flipCard(null); }
 
     function toggleStudioPanel() {
       const panel = document.getElementById('studioPanel');
@@ -392,26 +402,12 @@
       setTimeout(() => { t.style.display = 'none'; }, 3000);
     }
 
-    // 👑 アプリ内ブラウザ（LINE等）のブロックを判別する関数
-    function checkAppBrowser() {
-      const ua = navigator.userAgent.toLowerCase();
-      const isAppBrowser = /line|micromessenger|instagram|facebook|fbav|fban|twitter|yahoojapan/.test(ua);
-      if (isAppBrowser) {
-        alert("【重要】\nLINEやInstagram等のアプリ内ブラウザでは、スマホのセキュリティ制限により連絡先が保存できません。\n\n画面右下や右上のメニューから、『Safariで開く』または『ブラウザで開く』を選択してから再度保存してください。");
-        return true; 
-      }
-      return false;
-    }
-
-    // 👑 【究極の自動生成アプローチ】404エラーを完全に排除し、iPhoneでも確実に保存できる最強の処理
+    // 👑 GitHub Pages完成版: VCF自動生成＆純粋なダウンロード方式
     function downloadVCard(e) {
-      if(e) e.preventDefault(); // デフォルトのリンク遷移をストップ
-      
-      // アプリ内ブラウザの場合は警告を出して処理を停止
-      if (checkAppBrowser()) return;
+      if(e) e.preventDefault();
 
-      // 1. 最新の入力データを取得（空の場合はJSONから取得）
       const d = globalCardData || {};
+
       const org = document.getElementById('inputCompanyName').value || d.companyName || "";
       const name = document.getElementById('inputName').value || d.name || "";
       const title = document.getElementById('inputTitle').value || d.title || "";
@@ -421,71 +417,60 @@
       const email = document.getElementById('inputEmail').value || d.email || "";
       const address = document.getElementById('inputAddrText').value || d.address || "";
       const companyHp = document.getElementById('inputWebsite').value || d.website || "";
-      
-      // 👑 NFCやQRから飛んできた「完全なURL」を取得
-      const myCardUrl = window.location.href.split('?')[0]; 
-      const cleanAddr = address.replace(/〒?\d{3}-\d{4}\s*/, '').trim();
-      const mapUrl = document.getElementById('inputMapUrl').value || (cleanAddr ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(cleanAddr)}` : "");
+      const mapUrl = document.getElementById('inputMapUrl').value || d.mapUrl || "";
 
-      // 2. vCard（連絡先）データの生成。すべての情報とリンクを漏れなく記述
-      const vCardLines = [
-        "BEGIN:VCARD",
-        "VERSION:3.0",
+      const profileUrl = window.location.href.split('?')[0];
+
+      const vcf = [
+        'BEGIN:VCARD',
+        'VERSION:3.0',
         `N:;${name};;;`,
         `FN:${name}`,
         `ORG:${org}`,
         `TITLE:${title}`,
-        `TEL;TYPE=WORK,VOICE:${telMain.replace(/[^\d+()]/g, '')}`,
-        `TEL;TYPE=CELL:${telMobile.replace(/[^\d+()]/g, '')}`,
-        `TEL;TYPE=FAX:${fax.replace(/[^\d+()]/g, '')}`,
-        `EMAIL:${email}`,
-        `ADR:;;${address};;;;日本`,
+        `TEL;TYPE=WORK:${telMain}`,
+        `TEL;TYPE=CELL:${telMobile}`,
+        `TEL;TYPE=FAX:${fax}`,
+        `EMAIL;TYPE=INTERNET:${email}`,
+        `ADR;TYPE=WORK:;;${address};;;;日本`,
         `URL:${companyHp}`,
-        `URL;TYPE=MAP:${mapUrl}`, 
-        `URL;TYPE=PROFILE:${myCardUrl}`, 
-        `NOTE:【デジタル名刺を開く】\\n${myCardUrl}\\n\\n【Google Mapで開く】\\n${mapUrl}\\n\\n【会社HP】\\n${companyHp}`,
-        "END:VCARD"
-      ];
-      
-      const vcfStr = vCardLines.join('\r\n');
+        `URL;TYPE=MAP:${mapUrl}`,
+        `URL;TYPE=PROFILE:${profileUrl}`,
+        `NOTE:【デジタル名刺】\\n${profileUrl}\\n\\n【GoogleMap】\\n${mapUrl}\\n\\n【会社HP】\\n${companyHp}`,
+        'END:VCARD'
+      ].join('\r\n');
 
-      // 3. 【iOSダウンロードブロック回避の真髄】動的URLに直接遷移させる
       try {
-        const bom = new Uint8Array([0xEF, 0xBB, 0xBF]); // 文字化け防止BOM
-        const blob = new Blob([bom, vcfStr], { type: "text/vcard;charset=utf-8" });
-        const url = window.URL.createObjectURL(blob);
+        const bom = new Uint8Array([0xEF, 0xBB, 0xBF]);
+        const blob = new Blob([bom, vcf], { type: 'text/vcard;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+
+        a.href = url;
+        a.download = `${name || 'contact'}.vcf`;
         
-        // 👑 iOSでもAndroidでも確実に作動する最強の直接遷移方式
-        // 外部ファイル（contact.vcf）が存在しなくても、ここで作り出したデータをファイルとして読み込ませます
-        window.location.href = url;
-        
+        document.body.appendChild(a);
+        a.click();
+
         setTimeout(() => {
-          window.URL.revokeObjectURL(url);
-        }, 5000);
-      } catch (err) {
+          URL.revokeObjectURL(url);
+          document.body.removeChild(a);
+        }, 1000);
+
+        showToast('連絡先ファイルを作成しました。ファイルを開いて保存してください。');
+
+      } catch(err) {
         console.error(err);
-        alert("VCFの生成に失敗しました。別のブラウザでお試しください。");
+        alert('連絡先の生成に失敗しました');
       }
     }
 
+    // 👑 データを一箇所に集約し、名刺のリンクを同期する処理
     function syncStudioToView() {
-      // 唯一のデータソースからすべての値を取得
       const fImg = document.getElementById('inputFrontImgUrl').value.trim();
       const bImg = document.getElementById('inputBackImgUrl').value.trim();
       const lImg = document.getElementById('inputLogoImgUrl').value.trim();
       
-      const org = document.getElementById('inputCompanyName').value || globalCardData.companyName || "";
-      const name = document.getElementById('inputName').value || globalCardData.name || "";
-      const title = document.getElementById('inputTitle').value || globalCardData.title || "";
-      const telMain = document.getElementById('inputTelMain').value || globalCardData.tel_main || "";
-      const telMobile = document.getElementById('inputTelMobile').value || globalCardData.tel_mobile || "";
-      const fax = document.getElementById('inputFax').value || globalCardData.fax || "";
-      const email = document.getElementById('inputEmail').value || globalCardData.email || "";
-      const address = document.getElementById('inputAddrText').value || globalCardData.address || "";
-      const companyHp = document.getElementById('inputWebsite').value || globalCardData.website || "";
-      const inputMapUrl = document.getElementById('inputMapUrl').value;
-
-      // 画面の表示とリンクを更新
       if (fImg !== "") { document.getElementById('viewFrontImg').src = encodeURI(fImg); }
       if (bImg !== "") { document.getElementById('viewBackImg').src = encodeURI(bImg); }
       
@@ -514,18 +499,19 @@
       applyCoord('linkEmail', 'Email');
       applyCoord('logoFoil', 'Logo');
 
-      // リンク先の更新
-      const cleanAddr = address.replace(/〒?\d{3}-\d{4}\s*/, '').trim();
-      const mapUrl = inputMapUrl ? inputMapUrl : (cleanAddr ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(cleanAddr)}` : '#');
-      document.getElementById('linkAddr').href = mapUrl;
+      const mapInput = document.getElementById('inputMapUrl').value;
+      const addrInput = document.getElementById('inputAddrText').value;
+      const linkAddr = document.getElementById('linkAddr');
+      linkAddr.href = mapInput ? mapInput : (addrInput ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(addrInput.replace(/〒?\d{3}-\d{4}\s*/, '').trim())}` : '#');
       
-      document.getElementById('linkTelMain').href = `tel:${telMain.replace(/[^\d-]/g, '')}`;
-      document.getElementById('linkFax').href = `tel:${fax.replace(/[^\d-]/g, '')}`;
-      document.getElementById('linkTelMobile').href = `tel:${telMobile.replace(/[^\d-]/g, '')}`;
-      document.getElementById('linkEmail').href = `mailto:${email.trim()}`;
+      document.getElementById('linkTelMain').href = `tel:${document.getElementById('inputTelMain').value.replace(/[^\d-]/g, '')}`;
+      document.getElementById('linkFax').href = `tel:${document.getElementById('inputFax').value.replace(/[^\d-]/g, '')}`;
+      document.getElementById('linkTelMobile').href = `tel:${document.getElementById('inputTelMobile').value.replace(/[^\d-]/g, '')}`;
+      document.getElementById('linkEmail').href = `mailto:${document.getElementById('inputEmail').value.trim()}`;
 
-      if(companyHp) {
-        const safeUrl = /^https?:\/\//i.test(companyHp) ? companyHp : 'https://' + companyHp;
+      const webUrl = document.getElementById('inputWebsite').value;
+      if(webUrl) {
+        const safeUrl = /^https?:\/\//i.test(webUrl) ? webUrl : 'https://' + webUrl;
         document.getElementById('qrCode').src = "https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=" + encodeURIComponent(safeUrl);
         
         let displayUrl = safeUrl.replace(/^https?:\/\//, '');
@@ -546,7 +532,6 @@
         document.getElementById('linkWeb').style.display = 'none';
       }
 
-      // エフェクト更新
       const rootF = document.getElementById('cardFront');
       const rootB = document.getElementById('cardBack');
       rootF.classList.toggle('has-sweep-shine', document.getElementById('toggleSweepShine').checked);
@@ -554,11 +539,6 @@
       document.body.classList.toggle('has-border-sweep', document.getElementById('toggleBorderSweep').checked);
       rootF.classList.toggle('has-emboss-filter', document.getElementById('toggleEmboss').checked);
     }
-
-    // 👑 管理者向け：バックアップ機能は維持
-    document.getElementById('btnExportVcf').addEventListener('click', () => {
-      downloadVCard(null); // 上記の同じ処理を呼び出してDL
-    });
 
     function init() {
       try {
@@ -601,7 +581,6 @@
         }
       }
 
-      // 初期化時にリンクを同期
       syncStudioToView();
 
       if (new URLSearchParams(window.location.search).get('admin') === 'true') {
