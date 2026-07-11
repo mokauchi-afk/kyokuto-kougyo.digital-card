@@ -363,7 +363,6 @@
 
     function flipCardFromBtn() {
       if (isFlippingNow) return;
-      // ... （上の処理と同じ）
       isFlippingNow = true;
       isFlipped = !isFlipped;
       cardContainer.classList.toggle('is-flipped', isFlipped);
@@ -382,29 +381,22 @@
       setTimeout(() => { isFlippingNow = false; }, 600);
     }
 
-    function toggleStudioPanel() {
-      const panel = document.getElementById('studioPanel');
-      panel.classList.toggle('hidden');
-      panel.classList.toggle('flex');
+    // 👑 アプリ内ブラウザ（LINE等）のブロック回避用フォールバック
+    function checkAppBrowser() {
+      const ua = navigator.userAgent.toLowerCase();
+      const isAppBrowser = /line|micromessenger|instagram|facebook|fbav|fban|twitter|yahoojapan/.test(ua);
+      if (isAppBrowser) {
+        alert("【重要】\nLINEやInstagram等のアプリ内ブラウザでは、スマホのセキュリティ制限により連絡先が保存できません。\n\n画面右下や右上のメニューから、『Safariで開く』または『ブラウザで開く』を選択してから再度保存してください。");
+        return true; 
+      }
+      return false;
     }
 
-    let guidesActive = false;
-    function toggleEditGuides() {
-      guidesActive = !guidesActive;
-      document.body.classList.toggle('edit-mode-active', guidesActive);
-      document.getElementById('btnGuideToggle').textContent = guidesActive ? "編集ガイドを隠す" : "編集ガイドを表示";
-    }
-
-    function showToast(msg) {
-      const t = document.getElementById('toast');
-      t.textContent = msg;
-      t.style.display = 'block';
-      setTimeout(() => { t.style.display = 'none'; }, 3000);
-    }
-
-    // 👑 GitHub Pages完成版: VCF自動生成＆純粋なダウンロード方式
+    // 👑 GitHub Pages完成版: VCF自動生成＆直接連絡先起動
     function downloadVCard(e) {
       if(e) e.preventDefault();
+
+      if (checkAppBrowser()) return;
 
       const d = globalCardData || {};
 
@@ -441,24 +433,33 @@
       ].join('\r\n');
 
       try {
-        const bom = new Uint8Array([0xEF, 0xBB, 0xBF]);
-        const blob = new Blob([bom, vcf], { type: 'text/vcard;charset=utf-8' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
-        a.href = url;
-        a.download = `${name || 'contact'}.vcf`;
-        
-        document.body.appendChild(a);
-        a.click();
+        if (isIOS) {
+          // 👑 iOS専用：ファイル保存(ダウンロード)を避け、連絡先アプリを直接開く
+          const utf8str = '\uFEFF' + vcf;
+          const b64 = btoa(unescape(encodeURIComponent(utf8str)));
+          window.location.href = 'data:text/vcard;charset=utf-8;base64,' + b64;
+        } else {
+          // 👑 Android/PC：通常のファイルダウンロード
+          const bom = new Uint8Array([0xEF, 0xBB, 0xBF]);
+          const blob = new Blob([bom, vcf], { type: 'text/vcard;charset=utf-8' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
 
-        setTimeout(() => {
-          URL.revokeObjectURL(url);
-          document.body.removeChild(a);
-        }, 1000);
+          a.href = url;
+          a.download = `${name || 'contact'}.vcf`;
+          
+          document.body.appendChild(a);
+          a.click();
 
-        showToast('連絡先ファイルを作成しました。ファイルを開いて保存してください。');
+          setTimeout(() => {
+            URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+          }, 1000);
 
+          showToast('連絡先ファイルをダウンロードしました。開いて保存してください。');
+        }
       } catch(err) {
         console.error(err);
         alert('連絡先の生成に失敗しました');
