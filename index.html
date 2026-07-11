@@ -9,7 +9,6 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@300;400;500;700;900&family=Shippori+Mincho:wght@400;500;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Font Awesomeの読み込みを追加 -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
   <style>
@@ -505,50 +504,65 @@
       setTimeout(() => { t.style.display = 'none'; }, 3000);
     }
 
-    // 👑 vCard完全保存処理
+    // 👑 vCard完全保存処理（全ブラウザ・スマホ対応版）
     function downloadVCard() {
-      const org = document.getElementById('inputCompanyName').value;
-      const name = document.getElementById('inputName').value;
-      const title = document.getElementById('inputTitle').value;
-      const telMain = document.getElementById('inputTelMain').value;
-      const telMobile = document.getElementById('inputTelMobile').value;
-      const fax = document.getElementById('inputFax').value;
-      const email = document.getElementById('inputEmail').value;
-      const address = document.getElementById('inputAddrText').value;
+      // データの取得（フォームが空の場合はJSONの初期データを使用する安全対策）
+      const org = document.getElementById('inputCompanyName').value || globalCardData.companyName || "";
+      const name = document.getElementById('inputName').value || globalCardData.name || "";
+      const title = document.getElementById('inputTitle').value || globalCardData.title || "";
+      const telMain = document.getElementById('inputTelMain').value || globalCardData.tel_main || "";
+      const telMobile = document.getElementById('inputTelMobile').value || globalCardData.tel_mobile || "";
+      const fax = document.getElementById('inputFax').value || globalCardData.fax || "";
+      const email = document.getElementById('inputEmail').value || globalCardData.email || "";
+      const address = document.getElementById('inputAddrText').value || globalCardData.address || "";
+      const companyHp = document.getElementById('inputWebsite').value || globalCardData.website || "";
       
-      const myCardUrl = window.location.href.split('?')[0]; 
-      const companyHp = document.getElementById('inputWebsite').value;
-      const mapUrl = document.getElementById('inputMapUrl').value || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address.replace(/〒?\d{3}-\d{4}\s*/, '').trim())}`;
-
-      // vCardデータの生成（UTF-8 BOM付き）
-      const lines = [
-        'BEGIN:VCARD', 'VERSION:3.0',
-        `N:;${name};;;`, `FN:${name}`, `ORG:${org}`, `TITLE:${title}`,
-        `TEL;TYPE=WORK,VOICE:${telMain.replace(/[^\d+()]/g, '')}`,
-        `TEL;TYPE=CELL,VOICE:${telMobile.replace(/[^\d+()]/g, '')}`,
-        `TEL;TYPE=WORK,FAX:${fax.replace(/[^\d+()]/g, '')}`,
-        `EMAIL;TYPE=WORK:${email}`,
-        `ADR;TYPE=WORK:;;${address};;;;日本`,
-        `URL;TYPE=WORK:${companyHp}`,
-        `URL;TYPE=PROFILE:${myCardUrl}`,
-        `NOTE:【デジタル名刺】\\n${myCardUrl}\\n\\n【Google Map】\\n${mapUrl}`,
-        'END:VCARD'
-      ];
+      // 🌟 NFCに書き込まれている完全なURL（?id=... を消さずに取得！）
+      const myCardUrl = window.location.href; 
       
-      const vcfStr = lines.join('\r\n');
-      // BOMを付与して文字化け防止
-      const bom = new Uint8Array([0xEF, 0xBB, 0xBF]);
-      // Blobを生成
-      const blob = new Blob([bom, vcfStr], { type: "text/vcard;charset=utf-8" });
-      const url = URL.createObjectURL(blob);
+      // vCardデータの生成
+      // スマホのアドレス帳で正確に認識されるよう、規格に忠実に作成
+      const vcfStr = 
+`BEGIN:VCARD\r
+VERSION:3.0\r
+N:;${name};;;\r
+FN:${name}\r
+ORG:${org}\r
+TITLE:${title}\r
+TEL;TYPE=WORK,VOICE:${telMain}\r
+TEL;TYPE=CELL,VOICE:${telMobile}\r
+TEL;TYPE=WORK,FAX:${fax}\r
+EMAIL;TYPE=WORK:${email}\r
+ADR;TYPE=WORK:;;${address};;;;日本\r
+URL;TYPE=WORK:${companyHp}\r
+URL;TYPE=PROFILE:${myCardUrl}\r
+NOTE:【デジタル名刺URL】\n${myCardUrl}\r
+END:VCARD`;
       
-      // 🌟修正：a.download による強制保存をやめ、別タブ（別ウィンドウ）で開かせる
-      // これにより、iOS/AndroidのOS標準機能が連絡先ファイルとして認識し、電話帳アプリへ渡す画面が出ます。
-      window.open(url, '_blank');
+      const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+      const isIOS = /iPad|iPhone|iPod/.test(userAgent) && !window.MSStream;
       
-      // 数秒後にメモリを解放
-      setTimeout(() => URL.revokeObjectURL(url), 5000);
-      showToast("連絡先データを表示しました。スマホに保存してください。");
+      if (isIOS) {
+        // iOS (Safari等) はData URIで直接開くことで「新規連絡先」画面を立ち上げる
+        window.location.href = "data:text/vcard;charset=utf-8,%EF%BB%BF" + encodeURIComponent(vcfStr);
+      } else {
+        // Android / PC はダウンロード属性でファイルとして渡し、OS側で連絡先アプリに渡させる
+        const bom = new Uint8Array([0xEF, 0xBB, 0xBF]);
+        const blob = new Blob([bom, vcfStr], { type: "text/vcard;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = url;
+        a.download = `${org}_${name}.vcf`.replace(/\s/g, '');
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => {
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+        }, 100);
+      }
+      
+      showToast("連絡先画面を開いています...");
     }
 
     function syncStudioToView() {
