@@ -234,11 +234,11 @@
               <!-- ホットスポット -->
               <a id="hsAddr" href="#" target="_blank" rel="noopener noreferrer" class="coord-target" data-label="📍 地図"></a>
               <a id="hsTel" href="#" class="coord-target" data-label="📞 代表電話"></a>
-              <div id="hsFax" class="coord-target" data-label="📠 FAX"></div>
+              <div id="hsFax" class="coord-target" data-label="📠 FAX"></div> <!-- FAXはリンクなし -->
               <a id="hsMobile" href="#" class="coord-target" data-label="📱 携帯"></a>
               <a id="hsEmail" href="#" class="coord-target" data-label="✉️ メール"></a>
               
-              <!-- エンボスロゴ画像 (エラー時は非表示にする処理を追加) -->
+              <!-- 👑 修正: ロゴのクエスチョンマーク非表示対策を確実に追加 -->
               <img id="logoFoil" src="" class="foil-logo" alt="ロゴ" onerror="this.style.display='none';">
             </div>
           </div>
@@ -279,9 +279,9 @@
         <span id="btnFlipText">裏面を表示する（タップ回転）</span>
       </button>
 
-      <!-- 👑 修正: 連絡先保存ボタン (GitHub Pages 最強アプローチ) -->
-      <!-- download="contact.vcf"を削除し、純粋なリンクとすることでiOSで確実に連絡先アプリを立ち上げます -->
-      <a href="contact.vcf" onclick="return checkAppBrowser(event)" class="w-full py-3.5 bg-gradient-to-r from-[#211a13] via-[#120e0a] to-[#211a13] text-[#ceba8c] border border-[#6b5842] rounded-lg font-serif tracking-[0.2em] text-xs flex items-center justify-center gap-2 shadow-xl hover:border-[#8e765a] hover:text-white transition active:scale-[0.97] duration-150 relative z-20">
+      <!-- 👑 修正: 連絡先保存ボタン (iOSダイレクト起動・Android/PCダウンロード対応のJavaScript版) -->
+      <!-- href="#" とし、onclick で動的に処理を振り分けます。ファイル(contact.vcf)への依存を無くし、即時生成します。 -->
+      <a href="#" onclick="downloadVCard(event)" class="w-full py-3.5 bg-gradient-to-r from-[#211a13] via-[#120e0a] to-[#211a13] text-[#ceba8c] border border-[#6b5842] rounded-lg font-serif tracking-[0.2em] text-xs flex items-center justify-center gap-2 shadow-xl hover:border-[#8e765a] hover:text-white transition active:scale-[0.97] duration-150 relative z-20">
         <i class="fa-solid fa-address-card"></i>
         連絡先を保存
       </a>
@@ -411,6 +411,7 @@
         <div class="panel bg-black border-gray-600">
           <h4 class="font-bold text-[#d4af37] text-xs mb-3 border-b border-gray-700 pb-1">🚀 5. 出力 ＆ NFC書込</h4>
           
+          <!-- 管理画面用のVCFダウンロードボタン -->
           <button id="btnExportVcfAdmin" class="w-full py-2 mb-3 bg-[#238636] hover:bg-[#2ea043] text-white text-xs font-bold rounded transition flex items-center justify-center gap-2">
             <i class="fa-solid fa-download"></i> contact.vcf を生成してDL
           </button>
@@ -579,6 +580,7 @@
         'hsEmail': email ? `mailto:${email.trim()}` : '#'
       };
       
+      // リンクの設定（hsFaxは除外しているためここでは処理しない）
       for (const [id, url] of Object.entries(linkMap)) {
         const el = document.getElementById(id);
         if (el) el.href = url;
@@ -692,12 +694,12 @@
       cardStage.addEventListener('mouseleave', () => { targetX = 0; targetY = 0; });
     }
 
-    // --- Flip Logic (iOS 3D Bug Fix) ---
+    // --- 👑 Flip Logic (バブリング防止・iOS完全対応) ---
     const cardContainer = document.getElementById('cardContainer');
     let isFlipped = false, isFlippingNow = false;
     
     function doFlip(e) {
-      // aタグやホットスポットのタップならフリップしない
+      // aタグやホットスポット（.coord-target）のタップならフリップしない（誤爆防止）
       if (e && e.target && (e.target.closest('a') || e.target.closest('.coord-target'))) return; 
       if (isFlippingNow || !cardContainer) return;
       
@@ -835,13 +837,85 @@
       if (isAppBrowser) {
         if(e) e.preventDefault();
         alert("【重要】\nLINEやInstagram等のアプリ内ブラウザでは、スマホのセキュリティ制限により連絡先が保存できません。\n\n画面右下や右上のメニューから、『Safariで開く』または『ブラウザで開く』を選択してから再度保存してください。");
-        return false; 
+        return true; 
       }
-      return true;
+      return false;
     }
 
-    // 👑 スタジオ画面用：contact.vcf 生成 (GitHub配置用)
+    // 👑 【真の完全版】連絡先保存アクション (Data URI ＆ Blob DL)
+    function downloadVCard(e) {
+      if(e) e.preventDefault();
+
+      if (checkAppBrowser(e)) return;
+
+      const d = globalCardData || {};
+      const org = document.getElementById('inComp')?.value || d.companyName || "";
+      const name = document.getElementById('inName')?.value || d.name || "";
+      const title = document.getElementById('inTitle')?.value || d.title || "";
+      const telMain = document.getElementById('inTel')?.value || d.tel_main || "";
+      const telMobile = document.getElementById('inMobile')?.value || d.tel_mobile || "";
+      const fax = document.getElementById('inFax')?.value || d.fax || "";
+      const email = document.getElementById('inEmail')?.value || d.email || "";
+      const address = document.getElementById('inAddr')?.value || d.address || "";
+      const companyHp = document.getElementById('inHpUrl')?.value || d.website || "";
+      
+      const myCardUrl = document.getElementById('outFullUrl')?.value || window.location.href.split('?')[0]; 
+      const cleanAddr = address.replace(/〒?\d{3}-\d{4}\s*/, '').trim();
+      const mapUrl = document.getElementById('inMapUrl')?.value || (cleanAddr ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(cleanAddr)}` : "");
+
+      // 全データを網羅した最強のVCFフォーマット
+      const vCardLines = [
+        "BEGIN:VCARD",
+        "VERSION:3.0",
+        `N:;${name};;;`,
+        `FN:${name}`,
+        `ORG:${org}`,
+        `TITLE:${title}`,
+        `TEL;TYPE=WORK,VOICE:${telMain.replace(/[^\d+()]/g, '')}`,
+        `TEL;TYPE=CELL,VOICE:${telMobile.replace(/[^\d+()]/g, '')}`,
+        `TEL;TYPE=WORK,FAX:${fax.replace(/[^\d+()]/g, '')}`,
+        `EMAIL;TYPE=WORK:${email}`,
+        `ADR;TYPE=WORK:;;${address};;;;日本`,
+        `URL:${companyHp}`,
+        `URL;TYPE=MAP:${mapUrl}`, 
+        `URL;TYPE=PROFILE:${myCardUrl}`, 
+        `NOTE:【デジタル名刺】\\n${myCardUrl}\\n\\n【Google Map】\\n${mapUrl}\\n\\n【会社HP】\\n${companyHp}`,
+        "END:VCARD"
+      ];
+      
+      const vcfStr = vCardLines.join('\r\n');
+
+      try {
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+        if (isIOS) {
+          // 👑 iOS最強のアプローチ：Data URIによる直接遷移（ファイルダウンロードを回避し連絡先アプリを直起動）
+          const utf8str = '\uFEFF' + vcfStr;
+          const b64 = btoa(unescape(encodeURIComponent(utf8str)));
+          window.location.href = 'data:text/vcard;charset=utf-8;base64,' + b64;
+        } else {
+          // 👑 Android/PC最強のアプローチ：確実なBlobファイルダウンロード
+          const bom = new Uint8Array([0xEF, 0xBB, 0xBF]);
+          const blob = new Blob([bom, vcfStr], { type: "text/vcard;charset=utf-8" });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.style.display = 'none';
+          a.href = url;
+          a.download = `${org}_${name}.vcf`.replace(/\s/g, '');
+          document.body.appendChild(a);
+          a.click();
+          setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 1000);
+          showToast("連絡先をダウンロードしました。ファイルを開いて保存してください。");
+        }
+      } catch (err) {
+        console.error(err);
+        alert("連絡先の生成に失敗しました。");
+      }
+    }
+
+    // 👑 スタジオ画面用：contact.vcf 生成 (GitHub配置バックアップ用)
     document.getElementById('btnExportVcfAdmin')?.addEventListener('click', () => {
+      // 処理は上記 downloadVCard と同じ（強制的にBlob DLをさせる）
       const d = globalCardData || {};
       const org = document.getElementById('inComp').value || d.companyName || "";
       const name = document.getElementById('inName').value || d.name || "";
@@ -857,7 +931,6 @@
       const cleanAddr = address.replace(/〒?\d{3}-\d{4}\s*/, '').trim();
       const mapUrl = document.getElementById('inMapUrl')?.value || (cleanAddr ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(cleanAddr)}` : "");
 
-      // 👑 修正: vCardのフォーマット（ADR形式含む）
       const vCardLines = [
         "BEGIN:VCARD",
         "VERSION:3.0",
@@ -883,6 +956,7 @@
         const blob = new Blob([bom, vcfStr], { type: "text/vcard" });
         const url = window.URL.createObjectURL(blob);
         
+        // 管理者画面からのダウンロードは強制的に window.location.href (iOS含む全端末対応)
         window.location.href = url;
         
         setTimeout(() => window.URL.revokeObjectURL(url), 5000);
