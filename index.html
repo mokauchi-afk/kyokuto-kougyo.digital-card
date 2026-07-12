@@ -234,7 +234,7 @@
               <!-- ホットスポット -->
               <a id="hsAddr" href="#" target="_blank" rel="noopener noreferrer" class="coord-target" data-label="📍 地図"></a>
               <a id="hsTel" href="#" class="coord-target" data-label="📞 代表電話"></a>
-              <a id="hsFax" href="#" class="coord-target" data-label="📠 FAX"></a>
+              <div id="hsFax" class="coord-target" data-label="📠 FAX"></div> <!-- 👑 修正: FAXはリンクなし -->
               <a id="hsMobile" href="#" class="coord-target" data-label="📱 携帯"></a>
               <a id="hsEmail" href="#" class="coord-target" data-label="✉️ メール"></a>
               
@@ -256,7 +256,7 @@
             
             <!-- QRコードとURL -->
             <div class="back-info" id="qrContainer">
-              <img id="qrCode" src="" alt="QR">
+              <img id="qrCode" src="" alt="QR"> <!-- 👑 修正: ID一致 -->
               <div class="back-info-text">
                 <div class="back-info-label">WEB SITE</div>
                 <div class="back-info-url" id="websiteText"></div>
@@ -279,8 +279,9 @@
         <span id="btnFlipText">裏面を表示する（タップ回転）</span>
       </button>
 
-      <!-- 👑 連絡先保存ボタン -->
-      <a href="#" id="btnDownloadVCard" class="w-full py-3.5 bg-gradient-to-r from-[#211a13] via-[#120e0a] to-[#211a13] text-[#ceba8c] border border-[#6b5842] rounded-lg font-serif tracking-[0.2em] text-xs flex items-center justify-center gap-2 shadow-xl hover:border-[#8e765a] hover:text-white transition active:scale-[0.97] duration-150 relative z-20">
+      <!-- 👑 修正: 連絡先保存ボタン (GitHub Pages 最強アプローチ) -->
+      <!-- JSによる動的生成は廃止し、同梱のcontact.vcfを直接ダウンロードさせます -->
+      <a href="contact.vcf" download="contact.vcf" onclick="return checkAppBrowser(event)" class="w-full py-3.5 bg-gradient-to-r from-[#211a13] via-[#120e0a] to-[#211a13] text-[#ceba8c] border border-[#6b5842] rounded-lg font-serif tracking-[0.2em] text-xs flex items-center justify-center gap-2 shadow-xl hover:border-[#8e765a] hover:text-white transition active:scale-[0.97] duration-150 relative z-20">
         <i class="fa-solid fa-address-card"></i>
         連絡先を保存
       </a>
@@ -565,28 +566,30 @@
       const companyHp = document.getElementById('inHpUrl')?.value || "";
       const inputMapUrl = document.getElementById('inMapUrl')?.value || "";
 
-      // 3. リンクの更新
+      // 3. 👑 修正: リンクの更新（電話リンク死の防止とFAXのリンク除外）
       const cleanAddr = address.replace(/〒?\d{3}-\d{4}\s*/, '').trim();
       const mapUrl = inputMapUrl || (cleanAddr ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(cleanAddr)}` : '#');
       
       const linkMap = {
         'hsAddr': mapUrl,
-        'hsTel': `tel:${telMain.replace(/[^\d-]/g, '')}`,
-        'hsFax': `tel:${fax.replace(/[^\d-]/g, '')}`,
-        'hsMobile': `tel:${telMobile.replace(/[^\d-]/g, '')}`,
-        'hsEmail': `mailto:${email.trim()}`
+        'hsTel': telMain ? `tel:${telMain.replace(/[^\d+()]/g, '')}` : '#',
+        // hsFaxはリンク要素から除外したため処理しない
+        'hsMobile': telMobile ? `tel:${telMobile.replace(/[^\d+()]/g, '')}` : '#',
+        'hsEmail': email ? `mailto:${email.trim()}` : '#'
       };
+      
+      // 不具合修正：完全一致の比較を避け、正しく href に代入する
       for (const [id, url] of Object.entries(linkMap)) {
         const el = document.getElementById(id);
-        if (el) el.href = url !== 'tel:' && url !== 'mailto:' ? url : '#';
+        if (el) el.href = url;
       }
 
-      // HP & QR更新
+      // 👑 修正: HP & QR更新 (IDの完全一致化 `qrCode`)
       const qrContainer = document.getElementById('qrContainer');
       const hsHp = document.getElementById('hsHp');
       if(companyHp) {
         const safeUrl = /^https?:\/\//i.test(companyHp) ? companyHp : 'https://' + companyHp;
-        const imgQr = document.getElementById('imgQr');
+        const imgQr = document.getElementById('qrCode');
         if(imgQr) imgQr.src = `https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(safeUrl)}`;
         
         const webText = document.getElementById('websiteText');
@@ -624,7 +627,7 @@
       };
       applyC('a', 'hsAddr');
       applyC('t1', 'hsTel');
-      applyC('f', 'hsFax');
+      applyC('f', 'hsFax'); // FAXの座標更新は維持
       applyC('t2', 'hsMobile');
       applyC('e', 'hsEmail');
       applyC('logo', 'logoFoil');
@@ -825,32 +828,36 @@
       } catch(e) { showToast("❌ 解析失敗"); console.error(e); } finally { if(loader) loader.classList.add('hidden'); }
     });
 
-    // --- 👑 vCard (連絡先保存) Core Logic ---
-    function checkAppBrowser() {
+    // 👑 アプリ内ブラウザ（LINE等）のブロック回避用フォールバック
+    function checkAppBrowser(e) {
       const ua = navigator.userAgent.toLowerCase();
       const isAppBrowser = /line|micromessenger|instagram|facebook|fbav|fban|twitter|yahoojapan/.test(ua);
       if (isAppBrowser) {
+        if(e) e.preventDefault();
         alert("【重要】\nLINEやInstagram等のアプリ内ブラウザでは、スマホのセキュリティ制限により連絡先が保存できません。\n\n画面右下や右上のメニューから、『Safariで開く』または『ブラウザで開く』を選択してから再度保存してください。");
-        return true; 
+        return false; 
       }
-      return false;
+      return true;
     }
 
-    function generateVCardString() {
-      const org = document.getElementById('inComp')?.value || "";
-      const name = document.getElementById('inName')?.value || "";
-      const title = document.getElementById('inTitle')?.value || "";
-      const telMain = document.getElementById('inTel')?.value || "";
-      const telMobile = document.getElementById('inMobile')?.value || "";
-      const fax = document.getElementById('inFax')?.value || "";
-      const email = document.getElementById('inEmail')?.value || "";
-      const address = document.getElementById('inAddr')?.value || "";
-      const companyHp = document.getElementById('inHpUrl')?.value || "";
+    // 👑 スタジオ画面用：contact.vcf 生成 (GitHub配置用)
+    document.getElementById('btnExportVcfAdmin')?.addEventListener('click', () => {
+      const d = globalCardData || {};
+      const org = document.getElementById('inComp').value || d.companyName || "";
+      const name = document.getElementById('inName').value || d.name || "";
+      const title = document.getElementById('inTitle').value || d.title || "";
+      const telMain = document.getElementById('inTel').value || d.tel_main || "";
+      const telMobile = document.getElementById('inMobile').value || d.tel_mobile || "";
+      const fax = document.getElementById('inFax').value || d.fax || "";
+      const email = document.getElementById('inEmail').value || d.email || "";
+      const address = document.getElementById('inAddr').value || d.address || "";
+      const companyHp = document.getElementById('inHpUrl').value || d.website || "";
       
       const myCardUrl = document.getElementById('outFullUrl')?.value || window.location.href.split('?')[0]; 
       const cleanAddr = address.replace(/〒?\d{3}-\d{4}\s*/, '').trim();
       const mapUrl = document.getElementById('inMapUrl')?.value || (cleanAddr ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(cleanAddr)}` : "");
 
+      // 👑 修正: vCardのフォーマット（ADR形式含む）
       const vCardLines = [
         "BEGIN:VCARD",
         "VERSION:3.0",
@@ -859,62 +866,23 @@
         `ORG:${org}`,
         `TITLE:${title}`,
         `TEL;TYPE=WORK,VOICE:${telMain.replace(/[^\d+()]/g, '')}`,
-        `TEL;TYPE=CELL:${telMobile.replace(/[^\d+()]/g, '')}`,
-        `TEL;TYPE=FAX:${fax.replace(/[^\d+()]/g, '')}`,
-        `EMAIL:${email}`,
-        `ADR:;;${address};;;;日本`,
+        `TEL;TYPE=CELL,VOICE:${telMobile.replace(/[^\d+()]/g, '')}`,
+        `TEL;TYPE=WORK,FAX:${fax.replace(/[^\d+()]/g, '')}`,
+        `EMAIL;TYPE=WORK:${email}`,
+        `ADR;TYPE=WORK:;;${address};;;;日本`,
         `URL:${companyHp}`,
         `URL;TYPE=MAP:${mapUrl}`, 
         `URL;TYPE=PROFILE:${myCardUrl}`, 
         `NOTE:【デジタル名刺】\\n${myCardUrl}\\n\\n【Google Map】\\n${mapUrl}\\n\\n【会社HP】\\n${companyHp}`,
         "END:VCARD"
       ];
-      return { str: vCardLines.join('\r\n'), name: name, org: org };
-    }
-
-    // 👑 公開画面用：連絡先保存アクション（iOS直通 DataURI ＆ Blob DL）
-    document.getElementById('btnDownloadVCard')?.addEventListener('click', (e) => {
-      e.preventDefault();
-      if (checkAppBrowser()) return;
-
-      const vcardData = generateVCardString();
-      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-
+      
       try {
-        if (isIOS) {
-          // iOS Safariのダウンロードブロックを回避するData URI直接遷移
-          const utf8str = '\uFEFF' + vcardData.str;
-          const b64 = btoa(unescape(encodeURIComponent(utf8str)));
-          window.location.href = 'data:text/vcard;charset=utf-8;base64,' + b64;
-        } else {
-          // Android / PC 用ファイルダウンロード
-          const bom = new Uint8Array([0xEF, 0xBB, 0xBF]);
-          const blob = new Blob([bom, vcardData.str], { type: "text/vcard;charset=utf-8" });
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.style.display = 'none';
-          a.href = url;
-          a.download = `${vcardData.org}_${vcardData.name}.vcf`.replace(/\s/g, '');
-          document.body.appendChild(a);
-          a.click();
-          setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 1000);
-          showToast("連絡先をダウンロードしました。ファイルを開いて保存してください。");
-        }
-      } catch (err) {
-        console.error(err);
-        alert("連絡先の生成に失敗しました。");
-      }
-    });
-
-    // 👑 スタジオ画面用：contact.vcf 生成 (GitHub配置用)
-    document.getElementById('btnExportVcfAdmin')?.addEventListener('click', () => {
-      const vcardData = generateVCardString();
-      try {
+        const vcfStr = vCardLines.join('\r\n');
         const bom = new Uint8Array([0xEF, 0xBB, 0xBF]);
-        const blob = new Blob([bom, vcardData.str], { type: "text/vcard" });
+        const blob = new Blob([bom, vcfStr], { type: "text/vcard" });
         const url = window.URL.createObjectURL(blob);
         
-        // 直リンク遷移方式
         window.location.href = url;
         
         setTimeout(() => window.URL.revokeObjectURL(url), 5000);
